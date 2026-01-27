@@ -15,6 +15,9 @@ class VideoGestureRecogniser:
         self.model_path = os.path.join(os.path.dirname(__file__), "gesture_recognizer.task")
 
     def _result_callback(self, result: GestureRecognizerResult, output_image: mp.Image, timestamp_ms: int):
+        """
+        Run for each picture analysed by the recogniser.
+        """
         if len(result.gestures) < 1:
             return
 
@@ -28,7 +31,8 @@ class VideoGestureRecogniser:
         )
         return GestureRecognizer.create_from_options(options)
 
-    def _send_to_recogniser(self, frame: mp.Image, recognizer: GestureRecognizer):
+    @staticmethod
+    def _send_to_recogniser(frame: mp.Image, recognizer: GestureRecognizer):
         timestamp_ms = int(1000 * time.time())
 
         # convert and send to recognizer asynchronously
@@ -37,6 +41,9 @@ class VideoGestureRecogniser:
         recognizer.recognize_async(mp_image, timestamp_ms)
 
     def run(self):
+        """
+        Turns on webcam and uses GestureRecognizer to analyse the picture.
+        """
         with video_capture_manager() as cap, self._create_recognizer() as recognizer:
             while cap.isOpened():
                 # get the image
