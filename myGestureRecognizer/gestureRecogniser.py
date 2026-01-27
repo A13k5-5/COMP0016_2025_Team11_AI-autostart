@@ -14,7 +14,8 @@ WINDOW_NAME = "Hand Detection"
 class VideoGestureRecogniser:
     def __init__(self):
         self.model_path = os.path.join(os.path.dirname(__file__), "gesture_recognizer.task")
-        self._fps = FPS()
+        # default value of 30 fps
+        self.fps_manager = FPS(30)
 
     def _result_callback(self, result: GestureRecognizerResult, output_image: mp.Image, timestamp_ms: int):
         """
@@ -47,16 +48,17 @@ class VideoGestureRecogniser:
         Turns on webcam and uses GestureRecognizer to analyse the picture.
         """
         with video_capture_manager() as cap, self._create_recognizer() as recognizer:
-            self._fps.start()
+            self.fps_manager.start()
             while cap.isOpened():
                 # get the image
                 ret, frame = cap.read()
+                print(f"FPS: {self.fps_manager.get_current_fps()}")
+                if not self.fps_manager.is_time_for_next_frame():
+                    continue
+
+                self.fps_manager.update()
                 cv2.imshow(WINDOW_NAME, frame)
-
                 self._send_to_recogniser(frame, recognizer)
-
-                self._fps.update()
-                print(f"FPS: {self._fps.fps()}")
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
