@@ -4,7 +4,7 @@ from videoCaptureManager import video_capture_manager
 
 WINDOW_NAME = "Hand Detection"
 
-class GestureRecogniser:
+class VideoGestureRecogniser:
     def __init__(self):
         pass
 
@@ -18,5 +18,5 @@ class GestureRecogniser:
                     break
 
 if __name__ == "__main__":
-    gr: GestureRecogniser = GestureRecogniser()
+    gr: VideoGestureRecogniser = VideoGestureRecogniser()
     gr.run()
