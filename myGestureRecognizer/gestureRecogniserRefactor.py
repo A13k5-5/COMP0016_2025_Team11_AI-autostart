@@ -54,7 +54,8 @@ class GestureRecognizerApp:
         self._last_gesture: str | None = None
         self._last_handedness: str | None = None
         self._last_timestamp_ms: int = 0
-        self._fps = 0.0
+        self.actual_fps = 0.0
+        self.set_fps = 10
         self._prev_time = time.time()
         logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 
@@ -89,6 +90,7 @@ class GestureRecognizerApp:
         self._reset()
         logging.info("Starting GestureRecognizerApp (model=%s, camera=%d)", self.model_path, self.camera_index)
         try:
+            prev = 0
             with self._create_recognizer() as recognizer, video_capture_manager(self.camera_index) as cap:
                 while True:
                     ret, frame = cap.read()
@@ -96,12 +98,17 @@ class GestureRecognizerApp:
                         logging.warning("Failed to read frame from camera")
                         break
 
-                    time.sleep(5/30)
+                    # check if enough time has passed
+                    time_elapsed = time.time() - prev
+                    if time_elapsed < 1./self.set_fps:
+                        continue
+
+                    prev = time.time()
 
                     # compute and update FPS
                     now = time.time()
                     dt = now - self._prev_time if now != self._prev_time else 1e-6
-                    self._fps = 1.0 / dt
+                    self.actual_fps = 1.0 / dt
                     self._prev_time = now
 
                     timestamp_ms = int(1000 * now)
@@ -112,7 +119,7 @@ class GestureRecognizerApp:
                     recognizer.recognize_async(mp_image, timestamp_ms)
 
                     # overlay last detected gesture and FPS (if any)
-                    display_text = f"FPS: {self._fps:.1f}"
+                    display_text = f"FPS: {self.actual_fps:.1f}"
                     if (self._last_gesture, self._last_handedness) in gestures:
                         display_text += f" | Gesture: {self._last_gesture}, {self._last_handedness}"
                         return self._last_gesture, self._last_handedness
@@ -140,5 +147,5 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     app = GestureRecognizerApp(model_path=args.model, camera_index=args.camera)
-    input = app.run()
+    input = app.run(gestures=[])
     print(input)
