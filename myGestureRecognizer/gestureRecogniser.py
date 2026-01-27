@@ -6,8 +6,8 @@ import mediapipe as mp
 from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import GestureRecognizer, RunningMode, GestureRecognizerOptions, GestureRecognizerResult
 
-from fps import FPS
-from videoCaptureManager import video_capture_manager
+from .fps import FPS
+from .videoCaptureManager import video_capture_manager
 
 WINDOW_NAME = "Hand Detection"
 
@@ -16,6 +16,12 @@ class VideoGestureRecogniser:
         self.model_path = os.path.join(os.path.dirname(__file__), "gesture_recognizer.task")
         # default value of 30 fps
         self.fps_manager = FPS(30)
+
+    def set_low_power_mode(self):
+        self.fps_manager.set_fps(1)
+
+    def set_high_power_mode(self):
+        self.fps_manager.set_fps(30)
 
     def _result_callback(self, result: GestureRecognizerResult, output_image: mp.Image, timestamp_ms: int):
         """
@@ -52,7 +58,7 @@ class VideoGestureRecogniser:
             while cap.isOpened():
                 # get the image
                 ret, frame = cap.read()
-                print(f"FPS: {self.fps_manager.get_current_fps()}")
+                # print(f"FPS: {self.fps_manager.get_current_fps()}")
                 if not self.fps_manager.is_time_for_next_frame():
                     continue
 
