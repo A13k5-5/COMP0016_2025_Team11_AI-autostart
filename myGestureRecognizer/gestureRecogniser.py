@@ -6,6 +6,7 @@ import mediapipe as mp
 from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import GestureRecognizer, RunningMode, GestureRecognizerOptions, GestureRecognizerResult
 
+from fps import FPS
 from videoCaptureManager import video_capture_manager
 
 WINDOW_NAME = "Hand Detection"
@@ -13,6 +14,7 @@ WINDOW_NAME = "Hand Detection"
 class VideoGestureRecogniser:
     def __init__(self):
         self.model_path = os.path.join(os.path.dirname(__file__), "gesture_recognizer.task")
+        self._fps = FPS()
 
     def _result_callback(self, result: GestureRecognizerResult, output_image: mp.Image, timestamp_ms: int):
         """
@@ -45,12 +47,17 @@ class VideoGestureRecogniser:
         Turns on webcam and uses GestureRecognizer to analyse the picture.
         """
         with video_capture_manager() as cap, self._create_recognizer() as recognizer:
+            self._fps.start()
             while cap.isOpened():
                 # get the image
                 ret, frame = cap.read()
                 cv2.imshow(WINDOW_NAME, frame)
 
                 self._send_to_recogniser(frame, recognizer)
+
+                self._fps.update()
+                print(f"FPS: {self._fps.fps()}")
+
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
 
