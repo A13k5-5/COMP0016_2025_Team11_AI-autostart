@@ -1,14 +1,28 @@
-import threading
+import AppOpener
+from myGestureRecognizer.gestureRecogniser import VideoGestureRecogniser
 
-from myGestureRecognizer import gestureRecogniser
 
-if __name__ == "__main__":
-    recogniser = gestureRecogniser.VideoGestureRecogniser()
-    recogniserThread = threading.Thread(target=recogniser.run)
-    recogniserThread.start()
-    while True:
-        option = int(input("Choose power mode: \n1. High power mode (30 fps) \n2. Low power mode (1 fps)\n"))
-        if option == 1:
-            recogniser.set_high_power_mode()
-        elif option == 2:
-            recogniser.set_low_power_mode()
+class GestureController:
+    def __init__(self):
+        self.videoGestureRecogniser: VideoGestureRecogniser = VideoGestureRecogniser(self)
+        self.prevUpdate = None
+
+    def update(self, update):
+        if update == self.prevUpdate:
+            # to prevent multiple triggers for same gesture
+            return
+        self.prevUpdate = update
+        match update:
+            case "Open_Palm":
+                AppOpener.open("zen")
+            case "Closed_Fist":
+                AppOpener.close("zen")
+            case "Victory":
+                AppOpener.open("notepad")
+            case "ILoveYou":
+                AppOpener.close("notepad")
+            case "Thumb_Up":
+                self.videoGestureRecogniser.stop()
+
+    def run(self):
+        self.videoGestureRecogniser.run()
