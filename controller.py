@@ -18,9 +18,9 @@ class GestureController:
             case "Closed_Fist":
                 AppOpener.close("zen")
             case "Victory":
-                AppOpener.open("steam")
+                AppOpener.open("notepad")
             case "ILoveYou":
-                AppOpener.close("steam")
+                AppOpener.close("notepad")
             case "Thumb_Up":
                 self.videoGestureRecogniser.stop()
 
