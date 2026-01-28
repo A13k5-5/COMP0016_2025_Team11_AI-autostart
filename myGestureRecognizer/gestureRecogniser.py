@@ -12,10 +12,14 @@ from .videoCaptureManager import video_capture_manager
 WINDOW_NAME = "Hand Detection"
 
 class VideoGestureRecogniser:
-    def __init__(self):
+    def __init__(self, controller):
         self.model_path = os.path.join(os.path.dirname(__file__), "gesture_recognizer.task")
         # default value of 30 fps
         self.fps_manager = FPS(30)
+        self.subscriber = controller
+
+    def update_subscriber(self, update):
+        self.subscriber.update(update)
 
     def set_low_power_mode(self):
         self.fps_manager.set_fps(1)
@@ -30,7 +34,7 @@ class VideoGestureRecogniser:
         if len(result.gestures) < 1:
             return
 
-        print(result.gestures[0][0].category_name)
+        self.update_subscriber(result.gestures[0][0].category_name)
 
     def _create_recognizer(self):
         options = GestureRecognizerOptions(
