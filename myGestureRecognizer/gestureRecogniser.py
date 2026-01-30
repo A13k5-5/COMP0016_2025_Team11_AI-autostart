@@ -8,6 +8,7 @@ from mediapipe.tasks.python.vision import GestureRecognizer, RunningMode, Gestur
 
 from .fps import FPS
 from .videoCaptureManager import video_capture_manager
+from .personRecognizer import PersonRecognizer
 
 WINDOW_NAME = "Hand Detection"
 
@@ -18,6 +19,7 @@ class VideoGestureRecogniser:
         self.fps_manager = FPS(30)
         self.subscriber = controller
         self.isRunning = True
+        self.person_recognizer = PersonRecognizer()
 
     def stop(self):
         print("Stopping Gesture Recogniser...")
@@ -59,21 +61,29 @@ class VideoGestureRecogniser:
         self.update_subscriber(result.gestures[0][0].category_name)
 
     def run(self):
-        """
-        Turns on webcam and uses GestureRecognizer to analyse the picture.
-        """
         with video_capture_manager() as cap, self._create_recognizer() as recognizer:
             self.fps_manager.start()
             while cap.isOpened() and self.isRunning:
-                # get the image
                 ret, frame = cap.read()
+                if not ret:
+                    continue
 
                 if not self.fps_manager.is_time_for_next_frame():
                     continue
 
                 self.fps_manager.update()
-                cv2.imshow(WINDOW_NAME, frame)
-                self._send_to_recogniser(frame, recognizer)
 
+                person_box = self.person_detector.detect_main_person(frame)
+                if person_box:
+                    top, left, bottom, right = person_box
+
+                    cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                else:
+                    cropped_frame = frame  # fallback to full frame
+
+                # send cropped frame to recognizer
+                self._send_to_recogniser(cropped_frame, recognizer)
+
+                cv2.imshow(WINDOW_NAME, frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     self.stop()
