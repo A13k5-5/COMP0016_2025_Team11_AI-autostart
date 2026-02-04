@@ -1,10 +1,11 @@
 from openvino.runtime import Core
 import numpy as np
+import cv2
 
 class PersonRecognizer:
     def __init__(self, model_path: str = "intel/person-detection-0200/FP16/person-detection-0200.xml"):
         self.ie = Core()
-        self.model = self.ie.read_model(model_path)
+        self.model = self.ie.read_model(model=model_path)
         self.compiled = self.ie.compile_model(self.model, "CPU")
         self.input_layer = self.compiled.input(0)
         self.output_layer = self.compiled.output(0)
