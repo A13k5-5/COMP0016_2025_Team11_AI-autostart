@@ -9,11 +9,14 @@ class PersonRecognizer:
         self.compiled = self.ie.compile_model(self.model, "CPU")
         self.input_layer = self.compiled.input(0)
         self.output_layer = self.compiled.output(0)
+        self.input_h = self.input_layer.shape[2]
+        self.input_w = self.input_layer.shape[3]
+
 
     def detect_main_person(self, frame):
         h, w, _ = frame.shape
-        resized = cv2.resize(frame, (256, 256))
-        inp = np.expand_dims(resized.transpose(2, 0, 1), 0).astype(np.float32)
+        resized = cv2.resize(frame, (self.input_w, self.input_h))
+        inp = np.expand_dims(resized.transpose(2, 0, 1), 0)
 
         results = self.compiled([inp])[self.output_layer]
         boxes = []
