@@ -8,7 +8,7 @@ from mediapipe.tasks.python.vision import GestureRecognizer, RunningMode, Gestur
 
 from .fps import FPS
 from .videoCaptureManager import video_capture_manager
-from .personRecognizer import PersonRecognizer
+from .personRecogniser import PersonRecogniser
 
 WINDOW_NAME = "Hand Detection"
 
@@ -19,7 +19,7 @@ class VideoGestureRecogniser:
         self.fps_manager = FPS(30)
         self.subscriber = controller
         self.isRunning = True
-        self.person_recognizer = PersonRecognizer()
+        self.person_recognizer = PersonRecogniser()
 
     def stop(self):
         print("Stopping Gesture Recogniser...")
