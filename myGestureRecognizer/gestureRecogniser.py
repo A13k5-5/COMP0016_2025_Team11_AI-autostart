@@ -24,6 +24,8 @@ class VideoGestureRecogniser:
     def stop(self):
         print("Stopping Gesture Recogniser...")
         self.isRunning = False
+        if hasattr(self, 'recognizer') and self.recognizer is not None:
+            self.recognizer.close()
 
     def update_subscriber(self, update):
         self.subscriber.update(update)
@@ -61,7 +63,8 @@ class VideoGestureRecogniser:
         self.update_subscriber(result.gestures[0][0].category_name)
 
     def run(self):
-        with video_capture_manager() as cap, self._create_recognizer() as recognizer:
+        with video_capture_manager() as cap:
+            self.recognizer = self._create_recognizer()  # store recognizer instance
             self.fps_manager.start()
             while cap.isOpened() and self.isRunning:
                 ret, frame = cap.read()
@@ -70,20 +73,21 @@ class VideoGestureRecogniser:
 
                 if not self.fps_manager.is_time_for_next_frame():
                     continue
-
                 self.fps_manager.update()
 
-                person_box = self.person_detector.detect_main_person(frame)
+                # detect main person
+                person_box = self.person_recognizer.detect_main_person(frame)
                 if person_box:
                     top, left, bottom, right = person_box
-
                     cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                    cropped_frame = frame[top:bottom, left:right]
                 else:
-                    cropped_frame = frame  # fallback to full frame
+                    cropped_frame = frame
 
                 # send cropped frame to recognizer
-                self._send_to_recogniser(cropped_frame, recognizer)
+                self._send_to_recogniser(cropped_frame, self.recognizer)
 
                 cv2.imshow(WINDOW_NAME, frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     self.stop()
+
