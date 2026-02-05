@@ -31,7 +31,7 @@ class PersonRecogniser:
         boxes = []
 
         for obj in results[0][0]:
-            _, conf, xmin, ymin, xmax, ymax = obj
+            _, _, conf, xmin, ymin, xmax, ymax = obj
             if conf > 0.6:
                 boxes.append((
                     int(ymin * h), int(xmin * w),
