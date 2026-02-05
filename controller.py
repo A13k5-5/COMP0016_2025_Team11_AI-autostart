@@ -21,8 +21,6 @@ class GestureController:
                 AppOpener.open("notepad")
             case "ILoveYou":
                 AppOpener.close("notepad")
-            case "Thumb_Up":
-                self.videoGestureRecogniser.stop()
 
     def run(self):
         self.videoGestureRecogniser.run()

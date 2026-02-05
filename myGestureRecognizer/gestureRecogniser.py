@@ -20,6 +20,8 @@ class VideoGestureRecogniser:
         self.subscriber = controller
         self.isRunning = True
         self.person_recognizer = PersonRecogniser()
+        self.stop_requested = False
+        self.latest_gesture = None
 
     def stop(self):
         print("Stopping Gesture Recogniser...")
@@ -54,40 +56,73 @@ class VideoGestureRecogniser:
         recognizer.recognize_async(mp_image, timestamp_ms)
 
     def _result_callback(self, result: GestureRecognizerResult, output_image: mp.Image, timestamp_ms: int):
-        """
-        Run for each picture analysed by the recogniser.
-        """
         if len(result.gestures) < 1:
+            self.latest_gesture = None
             return
 
-        self.update_subscriber(result.gestures[0][0].category_name)
+        gesture_name = result.gestures[0][0].category_name
+        self.latest_gesture = gesture_name
+
+        if gesture_name == "Thumb_Down":
+            self.stop_requested = True
+
+        self.update_subscriber(gesture_name)
 
     def run(self):
+        """
+        Main loop: capture video, detect person, crop frame, and recognize gestures.
+        """
+        self.stop_requested = False
+        self.recognizer = self._create_recognizer()
+        self.fps_manager.start()
+
         with video_capture_manager() as cap:
-            self.recognizer = self._create_recognizer()  # store recognizer instance
-            self.fps_manager.start()
             while cap.isOpened() and self.isRunning:
                 ret, frame = cap.read()
-                if not ret:
+                if not ret or frame is None or frame.size == 0:
                     continue
 
                 if not self.fps_manager.is_time_for_next_frame():
                     continue
+
                 self.fps_manager.update()
 
-                # detect main person
                 person_box = self.person_recognizer.detect_main_person(frame)
                 if person_box:
                     top, left, bottom, right = person_box
+
+                    top = max(0, top)
+                    left = max(0, left)
+                    bottom = min(frame.shape[0], bottom)
+                    right = min(frame.shape[1], right)
+
                     cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
                     cropped_frame = frame[top:bottom, left:right]
+
+                    if cropped_frame.size == 0:
+                        cropped_frame = frame
                 else:
-                    cropped_frame = frame
+                    cropped_frame = frame 
 
-                # send cropped frame to recognizer
-                self._send_to_recogniser(cropped_frame, self.recognizer)
+                try:
+                    self._send_to_recogniser(cropped_frame, self.recognizer)
+                except Exception as e:
+                    print(f"Warning: recognizer failed for this frame: {e}")
 
+                if self.latest_gesture:
+                    cv2.putText(frame, self.latest_gesture, (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 
+                                1.2,(0, 0, 255), 2, cv2.LINE_AA)
                 cv2.imshow(WINDOW_NAME, frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
-                    self.stop()
+                    self.stop_requested = True
 
+                if self.stop_requested:
+                    self.isRunning = False
+
+            if hasattr(self, "recognizer") and self.recognizer is not None:
+                try:
+                    self.recognizer.close()
+                except Exception as e:
+                    print(f"Warning: failed to close recognizer cleanly: {e}")
+
+            cv2.destroyAllWindows()
