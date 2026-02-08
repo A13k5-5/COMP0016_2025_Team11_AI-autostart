@@ -20,14 +20,10 @@ class VideoGestureRecogniser:
         self.subscriber = controller
         self.isRunning = True
         self.person_recognizer = PersonRecogniser()
-        self.stop_requested = False
-        self.latest_gesture = None
 
     def stop(self):
         print("Stopping Gesture Recogniser...")
         self.isRunning = False
-        if hasattr(self, 'recognizer') and self.recognizer is not None:
-            self.recognizer.close()
 
     def update_subscriber(self, update):
         self.subscriber.update(update)
@@ -56,23 +52,19 @@ class VideoGestureRecogniser:
         recognizer.recognize_async(mp_image, timestamp_ms)
 
     def _result_callback(self, result: GestureRecognizerResult, output_image: mp.Image, timestamp_ms: int):
+        """
+        Run for each picture analysed by the recogniser.
+        """
         if len(result.gestures) < 1:
-            self.latest_gesture = None
             return
 
         gesture_name = result.gestures[0][0].category_name
-        self.latest_gesture = gesture_name
-
-        if gesture_name == "Thumb_Down":
-            self.stop_requested = True
-
         self.update_subscriber(gesture_name)
 
     def run(self):
         """
         Main loop: capture video, detect person, crop frame, and recognize gestures.
         """
-        self.stop_requested = False
         self.recognizer = self._create_recognizer()
         self.fps_manager.start()
 
@@ -109,14 +101,8 @@ class VideoGestureRecogniser:
                 except Exception as e:
                     print(f"Warning: recognizer failed for this frame: {e}")
 
-                if self.latest_gesture:
-                    cv2.putText(frame, self.latest_gesture, (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 
-                                1.2,(0, 0, 255), 2, cv2.LINE_AA)
                 cv2.imshow(WINDOW_NAME, frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
-                    self.stop_requested = True
-
-                if self.stop_requested:
                     self.isRunning = False
 
             if hasattr(self, "recognizer") and self.recognizer is not None:
