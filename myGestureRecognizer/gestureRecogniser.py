@@ -65,10 +65,9 @@ class VideoGestureRecogniser:
         """
         Main loop: capture video, detect person, crop frame, and recognize gestures.
         """
-        self.recognizer = self._create_recognizer()
-        self.fps_manager.start()
-
-        with video_capture_manager() as cap:
+        with video_capture_manager() as cap, self._create_recognizer() as recognizer:
+            self.fps_manager.start()
+            
             while cap.isOpened() and self.isRunning:
                 ret, frame = cap.read()
                 if (not ret) or (frame is None) or (frame.size == 0) or (not self.fps_manager.is_time_for_next_frame()):
