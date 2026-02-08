@@ -71,10 +71,7 @@ class VideoGestureRecogniser:
         with video_capture_manager() as cap:
             while cap.isOpened() and self.isRunning:
                 ret, frame = cap.read()
-                if not ret or frame is None or frame.size == 0:
-                    continue
-
-                if not self.fps_manager.is_time_for_next_frame():
+                if (not ret) or (frame is None) or (frame.size == 0) or (not self.fps_manager.is_time_for_next_frame()):
                     continue
 
                 self.fps_manager.update()
