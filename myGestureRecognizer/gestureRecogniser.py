@@ -8,6 +8,7 @@ from mediapipe.tasks.python.vision import GestureRecognizer, RunningMode, Gestur
 
 from .fps import FPS
 from .videoCaptureManager import video_capture_manager
+from .personRecogniser import PersonRecogniser
 
 WINDOW_NAME = "Hand Detection"
 
@@ -18,6 +19,7 @@ class VideoGestureRecogniser:
         self.fps_manager = FPS(30)
         self.subscriber = controller
         self.isRunning = True
+        self.person_recognizer = PersonRecogniser()
 
     def stop(self):
         print("Stopping Gesture Recogniser...")
@@ -56,24 +58,59 @@ class VideoGestureRecogniser:
         if len(result.gestures) < 1:
             return
 
-        self.update_subscriber(result.gestures[0][0].category_name)
+        gesture_name = result.gestures[0][0].category_name
+        self.update_subscriber(gesture_name)
+    
+    def _capture_frame(self, cap):
+        """
+        Capture a frame from the camera, ensure it's valid and skip frames as necessary.
+        """
+        ret, frame = cap.read()
+        if not ret or frame is None or frame.size == 0 or not self.fps_manager.is_time_for_next_frame():
+            return None
+        self.fps_manager.update()
+        return frame
+
+    def _process_person_detection(self, frame):
+        """
+        Detect the main person in the frame and crop accordingly.
+        """
+        person_box = self.person_recognizer.detect_main_person(frame)
+        if person_box:
+            top, left, bottom, right = person_box
+            top = max(0, top)
+            left = max(0, left)
+            bottom = min(frame.shape[0], bottom)
+            right = min(frame.shape[1], right)
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+            cropped_frame = frame[top:bottom, left:right]
+            if cropped_frame.size == 0:
+                return frame
+            return cropped_frame
+        return frame
+    
+    def _display_frame(self, frame):
+        """
+        Display the frame with gesture recognition and handle the stop condition.
+        """
+        cv2.imshow(WINDOW_NAME, frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            self.isRunning = False
 
     def run(self):
         """
-        Turns on webcam and uses GestureRecognizer to analyse the picture.
+        Main loop: capture video, detect person, crop frame, and recognize gestures.
         """
         with video_capture_manager() as cap, self._create_recognizer() as recognizer:
             self.fps_manager.start()
-            while cap.isOpened() and self.isRunning:
-                # get the image
-                ret, frame = cap.read()
 
-                if not self.fps_manager.is_time_for_next_frame():
+            while cap.isOpened() and self.isRunning:
+                frame = self._capture_frame(cap)
+                if frame is None:
                     continue
 
-                self.fps_manager.update()
-                cv2.imshow(WINDOW_NAME, frame)
-                self._send_to_recogniser(frame, recognizer)
+                cropped_frame = self._process_person_detection(frame)
+                self._send_to_recogniser(cropped_frame, recognizer)
+                self._display_frame(frame)
 
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    self.stop()
+            cv2.destroyAllWindows()
