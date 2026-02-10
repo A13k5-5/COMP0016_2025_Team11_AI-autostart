@@ -117,5 +117,3 @@ class VideoGestureRecogniser:
                     print(f"Warning: recognizer failed for this frame: {e}")
 
                 self._display_frame(frame)
-
-            cv2.destroyAllWindows()
