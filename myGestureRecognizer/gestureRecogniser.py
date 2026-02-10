@@ -60,6 +60,42 @@ class VideoGestureRecogniser:
 
         gesture_name = result.gestures[0][0].category_name
         self.update_subscriber(gesture_name)
+    
+    def _capture_frame(self, cap):
+        """
+        Capture a frame from the camera, ensure it's valid and skip frames as necessary.
+        """
+        ret, frame = cap.read()
+        if not ret or frame is None or frame.size == 0 or not self.fps_manager.is_time_for_next_frame():
+            return None
+        self.fps_manager.update()
+        return frame
+
+    def _process_person_detection(self, frame):
+        """
+        Detect the main person in the frame and crop accordingly.
+        """
+        person_box = self.person_recognizer.detect_main_person(frame)
+        if person_box:
+            top, left, bottom, right = person_box
+            top = max(0, top)
+            left = max(0, left)
+            bottom = min(frame.shape[0], bottom)
+            right = min(frame.shape[1], right)
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+            cropped_frame = frame[top:bottom, left:right]
+            if cropped_frame.size == 0:
+                return frame
+            return cropped_frame
+        return frame
+    
+    def _display_frame(self, frame):
+        """
+        Display the frame with gesture recognition and handle the stop condition.
+        """
+        cv2.imshow(WINDOW_NAME, frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            self.isRunning = False
 
     def run(self):
         """
@@ -67,44 +103,19 @@ class VideoGestureRecogniser:
         """
         with video_capture_manager() as cap, self._create_recognizer() as recognizer:
             self.fps_manager.start()
-            
+
             while cap.isOpened() and self.isRunning:
-                ret, frame = cap.read()
-                if (not ret) or (frame is None) or (frame.size == 0) or (not self.fps_manager.is_time_for_next_frame()):
+                frame = self._capture_frame(cap)
+                if frame is None:
                     continue
 
-                self.fps_manager.update()
-
-                person_box = self.person_recognizer.detect_main_person(frame)
-                if person_box:
-                    top, left, bottom, right = person_box
-
-                    top = max(0, top)
-                    left = max(0, left)
-                    bottom = min(frame.shape[0], bottom)
-                    right = min(frame.shape[1], right)
-
-                    cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
-                    cropped_frame = frame[top:bottom, left:right]
-
-                    if cropped_frame.size == 0:
-                        cropped_frame = frame
-                else:
-                    cropped_frame = frame 
+                frame = self._process_person_detection(frame)
 
                 try:
-                    self._send_to_recogniser(cropped_frame, self.recognizer)
+                    self._send_to_recogniser(frame, recognizer)
                 except Exception as e:
                     print(f"Warning: recognizer failed for this frame: {e}")
 
-                cv2.imshow(WINDOW_NAME, frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    self.isRunning = False
-
-            if hasattr(self, "recognizer") and self.recognizer is not None:
-                try:
-                    self.recognizer.close()
-                except Exception as e:
-                    print(f"Warning: failed to close recognizer cleanly: {e}")
+                self._display_frame(frame)
 
             cv2.destroyAllWindows()
