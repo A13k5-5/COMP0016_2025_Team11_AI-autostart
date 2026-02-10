@@ -109,10 +109,10 @@ class VideoGestureRecogniser:
                 if frame is None:
                     continue
 
-                frame = self._process_person_detection(frame)
+                cropped_frame = self._process_person_detection(frame)
 
                 try:
-                    self._send_to_recogniser(frame, recognizer)
+                    self._send_to_recogniser(cropped_frame, recognizer)
                 except Exception as e:
                     print(f"Warning: recognizer failed for this frame: {e}")
 
