@@ -110,10 +110,7 @@ class VideoGestureRecogniser:
                     continue
 
                 cropped_frame = self._process_person_detection(frame)
-
-                try:
-                    self._send_to_recogniser(cropped_frame, recognizer)
-                except Exception as e:
-                    print(f"Warning: recognizer failed for this frame: {e}")
-
+                self._send_to_recogniser(cropped_frame, recognizer)
                 self._display_frame(frame)
+
+            cv2.destroyAllWindows()
