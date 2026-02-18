@@ -56,6 +56,7 @@ class VideoGestureRecogniser:
         Run for each picture analysed by the recogniser.
         """
         if len(result.gestures) < 1:
+            self.update_subscriber(None)
             return
 
         gesture_name = result.gestures[0][0].category_name
