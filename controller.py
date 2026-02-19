@@ -7,7 +7,7 @@ class GestureController:
         self.videoGestureRecogniser: VideoGestureRecogniser = VideoGestureRecogniser(self)
         self.prevUpdate = None
         self.last_gesture_time = time()
-        self.low_power = False
+        self.low_power = True
         self.open_palm_start_time = None
 
         self.open_palm_hold_seconds = 2
@@ -60,7 +60,6 @@ class GestureController:
     def deactivate_LPM(self, now=None):
         if now is None:
             now = time()
-
         if (
             self.low_power
             and self.open_palm_start_time is not None
@@ -68,7 +67,6 @@ class GestureController:
         ):
             self.videoGestureRecogniser.set_high_power_mode()
             self.low_power = False
-            print("High power mode activated.")
 
     def activate_LPM(self, now=None):
         if now is None:
@@ -77,4 +75,3 @@ class GestureController:
         if not self.low_power and (now - self.last_gesture_time >= self.inactivity_timeout_seconds):
             self.videoGestureRecogniser.set_low_power_mode()
             self.low_power = True
-            print("Low power mode activated.")
