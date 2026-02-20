@@ -47,6 +47,7 @@ class MappingWindow(QtWidgets.QWidget):
 
     def _create_gesture_combo(self, current_gesture: str) -> QtWidgets.QComboBox:
         combo = QtWidgets.QComboBox()
+        combo.addItem("")
         combo.addItems(SUPPORTED_GESTURES)
         idx = combo.findText(current_gesture)
         combo.setCurrentIndex(idx if idx >= 0 else 0)
@@ -60,6 +61,8 @@ class MappingWindow(QtWidgets.QWidget):
             self._set_action_cell(row, action)
             self._set_gesture_cell(row, action_to_gesture.get(action, ""))
 
+        self._refresh_gesture_options()
+
         self.status.setText("Loaded from file.")
 
     def _set_action_cell(self, row: int, action: str) -> None:
@@ -69,11 +72,30 @@ class MappingWindow(QtWidgets.QWidget):
 
     def _set_gesture_cell(self, row: int, gesture: str) -> None:
         combo = self._create_gesture_combo(gesture)
+        combo.currentTextChanged.connect(self._refresh_gesture_options)
         self.table.setCellWidget(row, 1, combo)
 
-    def _collect_mapping_from_table(self) -> tuple[dict, str]:
+    def _refresh_gesture_options(self) -> None:
+        combos = [self.table.cellWidget(row, 1) for row in range(len(SUPPORTED_ACTIONS))]
+        selected = [combo.currentText().strip() for combo in combos if combo is not None]
+
+        for combo in combos:
+            if combo is None:
+                continue
+
+            current = combo.currentText().strip()
+            used_by_others = {g for g in selected if g and g != current}
+            available = ["", *[g for g in SUPPORTED_GESTURES if g not in used_by_others]]
+
+            combo.blockSignals(True)
+            combo.clear()
+            combo.addItems(available)
+            idx = combo.findText(current)
+            combo.setCurrentIndex(idx if idx >= 0 else 0)
+            combo.blockSignals(False)
+
+    def _collect_mapping_from_table(self) -> dict:
         out = {g: "" for g in SUPPORTED_GESTURES}
-        used = set()
 
         for row, action in enumerate(SUPPORTED_ACTIONS):
             combo = self.table.cellWidget(row, 1)
@@ -81,10 +103,6 @@ class MappingWindow(QtWidgets.QWidget):
 
             if not gesture:
                 continue
-            if gesture in used:
-                return out, f"Duplicate gesture selected. Choose a different option."
-
-            used.add(gesture)
             out[gesture] = action
 
         return out
