@@ -1,0 +1,8 @@
+{
+  "Pointing_Up": "open:notepad",
+  "Closed_Fist": "open:zen",
+  "Victory": "close:zen",
+  "ILoveYou": "stop",
+  "Thumb_Up": "close:notepad",
+  "Thumb_Down": ""
+}
