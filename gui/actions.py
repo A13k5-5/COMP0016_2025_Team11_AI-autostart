@@ -1,6 +1,5 @@
 import json
 import os
-import AppOpener
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 MAPPING_PATH = os.path.join(BASE_DIR, "gui", "gesture_mapping.json")
@@ -42,27 +41,3 @@ def save_mapping(mapping: dict, path: str = MAPPING_PATH) -> None:
     
     with open(path, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2)
-
-def execute_action(action: str, video_gesture_recogniser) -> None:
-    """
-    Execute an action string (open/close/stop) for a detected gesture.
-    """
-    if not action:
-        return
-
-    action = action.strip()
-    if action == "stop":
-        video_gesture_recogniser.stop()
-        return
-
-    if action.startswith("open:"):
-        app = action.split(":", 1)[1].strip()
-        if app:
-            AppOpener.open(app)
-        return
-
-    if action.startswith("close:"):
-        app = action.split(":", 1)[1].strip()
-        if app:
-            AppOpener.close(app)
-        return

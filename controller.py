@@ -1,7 +1,7 @@
 from time import time
 import AppOpener
 from myGestureRecognizer.gestureRecogniser import VideoGestureRecogniser
-from gui.actions import load_mapping, execute_action
+from gui.actions import load_mapping
 
 class GestureController:
     """
@@ -53,7 +53,31 @@ class GestureController:
 
         self.prevUpdate = update
         action = self.gesture_mapping.get(update, "")
-        execute_action(action, self.videoGestureRecogniser)
+        self.execute_action(action)
+
+    def execute_action(self, action: str) -> None:
+        """
+        Execute an action string (open/close/stop) for a detected gesture.
+        """
+        if not action:
+            return
+
+        action = action.strip()
+        if action == "stop":
+            self.videoGestureRecogniser.stop()
+            return
+
+        if action.startswith("open:"):
+            app = action.split(":", 1)[1].strip()
+            if app:
+                AppOpener.open(app)
+            return
+
+        if action.startswith("close:"):
+            app = action.split(":", 1)[1].strip()
+            if app:
+                AppOpener.close(app)
+            return
 
     def run(self):
         """
