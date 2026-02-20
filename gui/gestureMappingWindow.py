@@ -27,6 +27,7 @@ class MappingWindow(QtWidgets.QWidget):
         self.table.horizontalHeader().setStretchLastSection(True)
 
         self.reload_btn = QtWidgets.QPushButton("Discard Changes")
+        self.clear_btn = QtWidgets.QPushButton("Clear Selections")
         self.save_btn = QtWidgets.QPushButton("Save")
         self.status = QtWidgets.QLabel("")
 
@@ -36,6 +37,7 @@ class MappingWindow(QtWidgets.QWidget):
         self.layout.addWidget(self.table)
 
         self.button_row.addWidget(self.reload_btn)
+        self.button_row.addWidget(self.clear_btn)
         self.button_row.addWidget(self.save_btn)
         self.layout.addLayout(self.button_row)
 
@@ -43,6 +45,7 @@ class MappingWindow(QtWidgets.QWidget):
 
     def _connect_signals(self) -> None:
         self.reload_btn.clicked.connect(self.load_into_table)
+        self.clear_btn.clicked.connect(self.clear_selections)
         self.save_btn.clicked.connect(self.save_from_table)
 
     def _create_gesture_combo(self, current_gesture: str) -> QtWidgets.QComboBox:
@@ -63,7 +66,7 @@ class MappingWindow(QtWidgets.QWidget):
 
         self._refresh_gesture_options()
 
-        self.status.setText("Loaded from file.")
+        self.status.setText("Previous selections loaded from file.")
 
     def _set_action_cell(self, row: int, action: str) -> None:
         action_item = QtWidgets.QTableWidgetItem(action)
@@ -106,6 +109,16 @@ class MappingWindow(QtWidgets.QWidget):
             out[gesture] = action
 
         return out
+
+    def clear_selections(self) -> None:
+        for row in range(len(SUPPORTED_ACTIONS)):
+            combo = self.table.cellWidget(row, 1)
+            combo.blockSignals(True)
+            combo.setCurrentIndex(0)
+            combo.blockSignals(False)
+
+        self._refresh_gesture_options()
+        self.status.setText("Selections cleared.")
 
     def save_from_table(self) -> None:
         out = self._collect_mapping_from_table()
