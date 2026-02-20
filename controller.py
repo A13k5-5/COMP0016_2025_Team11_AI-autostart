@@ -1,6 +1,7 @@
 from time import time
 import AppOpener
 from myGestureRecognizer.gestureRecogniser import VideoGestureRecogniser
+from gui.actions import load_mapping, execute_action
 
 class GestureController:
     def __init__(self):
@@ -12,6 +13,8 @@ class GestureController:
 
         self.open_palm_hold_seconds = 2
         self.inactivity_timeout_seconds = 30
+
+        self.gesture_mapping = load_mapping()
 
     def update(self, update):
         now = time()
@@ -42,17 +45,8 @@ class GestureController:
             return
 
         self.prevUpdate = update
-        match update:
-            case "Pointing_Up":
-                AppOpener.open("zen")
-            case "Closed_Fist":
-                AppOpener.close("zen")
-            case "Victory":
-                AppOpener.open("notepad")
-            case "ILoveYou":
-                AppOpener.close("notepad")
-            case "Thumb_Up":
-                self.videoGestureRecogniser.stop()
+        action = self.gesture_mapping.get(update, "")
+        execute_action(action, self.videoGestureRecogniser)
 
     def run(self):
         self.videoGestureRecogniser.run()
