@@ -50,7 +50,7 @@ class GestureController:
             return
 
         self.prevUpdate = update
-        action = self.gesture_mapping.get(update, "")
+        action = self.gesture_mapping.get(update)
         self.execute_action(action)
 
     def execute_action(self, action: str) -> None:

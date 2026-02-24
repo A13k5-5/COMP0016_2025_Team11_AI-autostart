@@ -69,7 +69,7 @@ class MappingWindow(QtWidgets.QWidget):
         Create a gesture dropdown with a blank option and pre-selected value.
         """
         combo = QtWidgets.QComboBox()
-        combo.addItem("")
+        combo.addItem("None")
         combo.addItems(SUPPORTED_GESTURES)
         idx = combo.findText(current_gesture)
         combo.setCurrentIndex(idx if idx >= 0 else 0)
@@ -119,7 +119,7 @@ class MappingWindow(QtWidgets.QWidget):
 
             current = combo.currentText().strip()
             used_by_others = {g for g in selected if g and g != current}
-            available = ["", *[g for g in SUPPORTED_GESTURES if g not in used_by_others]]
+            available = ["None", *[g for g in SUPPORTED_GESTURES if g not in used_by_others]]
 
             # Block signals while mutating options to avoid recursive refresh calls.
             combo.blockSignals(True)
