@@ -2,6 +2,7 @@ from time import time
 import AppOpener
 from myGestureRecognizer.gestureRecogniser import VideoGestureRecogniser
 from gui.actions import load_mapping
+from config import open_palm_hold_seconds, inactivity_timeout_seconds
 
 class GestureController:
     """
@@ -13,9 +14,6 @@ class GestureController:
         self.last_gesture_time = time()
         self.low_power = True
         self.open_palm_start_time = None
-
-        self.open_palm_hold_seconds = 2
-        self.inactivity_timeout_seconds = 30
 
         self.gesture_mapping = load_mapping()
 
@@ -94,7 +92,7 @@ class GestureController:
         if (
             self.low_power
             and self.open_palm_start_time is not None
-            and (now - self.open_palm_start_time) >= self.open_palm_hold_seconds
+            and (now - self.open_palm_start_time) >= open_palm_hold_seconds
         ):
             self.videoGestureRecogniser.set_high_power_mode()
             self.low_power = False
