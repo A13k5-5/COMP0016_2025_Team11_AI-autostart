@@ -21,6 +21,7 @@ class VideoGestureRecogniser:
         self.model_path = os.path.join(os.path.dirname(__file__), "gesture_recognizer.task")
         # default value of 30 fps
         self.fps_manager = FPS(30)
+        self._is_low_power_mode = False
         self.subscribers = [controller, power_manager]
         self.subscribers = [subscriber for subscriber in self.subscribers if subscriber is not None]
         self.isRunning = True
@@ -46,9 +47,15 @@ class VideoGestureRecogniser:
 
     def set_low_power_mode(self):
         self.fps_manager.set_fps(1)
+        self._is_low_power_mode = True
 
     def set_high_power_mode(self):
         self.fps_manager.set_fps(30)
+        self._is_low_power_mode = False
+
+    def is_low_power_mode(self) -> bool:
+        """Return True when recognizer is currently in low-power mode."""
+        return self._is_low_power_mode
 
     def _create_recognizer(self):
         options = GestureRecognizerOptions(

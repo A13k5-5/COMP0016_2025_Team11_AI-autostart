@@ -12,7 +12,6 @@ class PowerManager:
         """
         self.videoGestureRecogniser = videoGestureRecogniser
         self.videoGestureRecogniser.set_low_power_mode()
-        self.low_power = True
         self.last_gesture_time = time()
         self.open_palm_start_time = None
 
@@ -46,14 +45,13 @@ class PowerManager:
 
     def deactivate_LPM(self):
         self.videoGestureRecogniser.set_high_power_mode()
-        self.low_power = False
 
     def try_deactivate_LPM(self, now):
         """
         Switch to high-power mode after a sustained open-palm hold.
         """
         if (
-            self.low_power
+            self.videoGestureRecogniser.is_low_power_mode()
             and self.open_palm_start_time is not None
             and (now - self.open_palm_start_time) >= open_palm_hold_seconds
         ):
@@ -61,11 +59,10 @@ class PowerManager:
 
     def activate_LPM(self):
         self.videoGestureRecogniser.set_low_power_mode()
-        self.low_power = True
 
     def try_activate_LPM(self, now):
         """
         Switch to low-power mode after prolonged gesture inactivity.
         """
-        if not self.low_power and (now - self.last_gesture_time >= inactivity_timeout_seconds):
+        if not self.videoGestureRecogniser.is_low_power_mode() and (now - self.last_gesture_time >= inactivity_timeout_seconds):
             self.activate_LPM()
