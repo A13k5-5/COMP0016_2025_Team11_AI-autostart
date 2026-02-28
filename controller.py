@@ -44,7 +44,16 @@ class GestureController:
 
     def execute_action(self, action: str) -> None:
         """
-        Execute an action string (open/close/stop) for a detected gesture.
+        Execute one action using the project's action-text format.
+
+        Supported values:
+            - "stop"
+            - "open:<app_name>"
+            - "close:<app_name>"
+
+        Args:
+            action: Action text looked up from gesture_mapping.json for the
+                current gesture.
         """
         if not action:
             return
