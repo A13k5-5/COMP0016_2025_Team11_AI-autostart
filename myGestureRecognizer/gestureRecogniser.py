@@ -13,11 +13,15 @@ from .personRecogniser import PersonRecogniser
 WINDOW_NAME = "Hand Detection"
 
 class VideoGestureRecogniser:
-    def __init__(self, controller):
+    def __init__(self, controller, power_manager=None):
+        """
+        Initialize recognizer resources and subscriber list.
+        """
         self.model_path = os.path.join(os.path.dirname(__file__), "gesture_recognizer.task")
         # default value of 30 fps
         self.fps_manager = FPS(30)
-        self.subscriber = controller
+        self.subscribers = [controller, power_manager]
+        self.subscribers = [subscriber for subscriber in self.subscribers if subscriber is not None]
         self.isRunning = True
         self.person_recognizer = PersonRecogniser()
 
@@ -25,8 +29,19 @@ class VideoGestureRecogniser:
         print("Stopping Gesture Recogniser...")
         self.isRunning = False
 
-    def update_subscriber(self, update):
-        self.subscriber.update(update)
+    def update_subscribers(self, update):
+        """
+        Publish the latest gesture update to all subscribers.
+        """
+        for subscriber in self.subscribers:
+            subscriber.update(update)
+
+    def add_subscriber(self, subscriber):
+        """
+        Register an additional subscriber for gesture updates.
+        """
+        if subscriber is not None and subscriber not in self.subscribers:
+            self.subscribers.append(subscriber)
 
     def set_low_power_mode(self):
         self.fps_manager.set_fps(1)
@@ -56,11 +71,11 @@ class VideoGestureRecogniser:
         Run for each picture analysed by the recogniser.
         """
         if len(result.gestures) < 1:
-            self.update_subscriber(None)
+            self.update_subscribers(None)
             return
 
         gesture_name = result.gestures[0][0].category_name
-        self.update_subscriber(gesture_name)
+        self.update_subscribers(gesture_name)
     
     def _capture_frame(self, cap):
         """
