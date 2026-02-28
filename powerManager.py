@@ -16,9 +16,12 @@ class PowerManager:
         self.last_gesture_time = time()
         self.open_palm_start_time = None
 
-    def update(self, update):
+    def update(self, update: str | None):
         """
         Handle gesture stream updates and apply low-power transitions.
+
+        Args:
+            update: Detected gesture name, or None when no gesture is detected.
         """
         now = time()
 

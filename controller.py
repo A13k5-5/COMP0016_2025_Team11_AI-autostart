@@ -17,9 +17,12 @@ class GestureController:
 
         self.gesture_mapping = load_mapping()
 
-    def update(self, update):
+    def update(self, update: str | None):
         """
         Handle each recognition callback and apply LPM + action rules.
+
+        Args:
+            update: Detected gesture name, or None when no gesture is detected.
         """
         # no gesture detected
         if update is None:

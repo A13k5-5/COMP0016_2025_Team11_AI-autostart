@@ -87,7 +87,7 @@ class VideoGestureRecogniser:
         self.fps_manager.update()
         return frame
     
-    def _draw_halo_effect(self, frame, box):
+    def _draw_halo_effect(self, frame, box: tuple[int, int, int, int]):
         """
         Draw a rounded-rectangle halo.
         """
