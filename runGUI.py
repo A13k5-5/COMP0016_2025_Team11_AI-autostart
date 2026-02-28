@@ -6,3 +6,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     w = MappingWindow()
     w.show()
+    app.exec()
