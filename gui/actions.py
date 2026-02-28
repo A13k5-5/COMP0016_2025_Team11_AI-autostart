@@ -30,13 +30,12 @@ def load_mapping(path: str = MAPPING_PATH) -> dict:
     """
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
-    return {g: str(data[g]).strip() for g in SUPPORTED_GESTURES}
+    return {g: str(data.get(g, "")).strip() for g in SUPPORTED_GESTURES}
 
 def save_mapping(mapping: dict, path: str = MAPPING_PATH) -> None:
     """
     Persist the provided gesture-to-action mapping to JSON.
     """
-    os.makedirs(os.path.dirname(path), exist_ok=True)
     out = {g: str(mapping.get(g, "")).strip() for g in SUPPORTED_GESTURES}
     
     with open(path, "w", encoding="utf-8") as f:
