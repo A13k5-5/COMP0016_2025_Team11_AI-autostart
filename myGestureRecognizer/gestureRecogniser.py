@@ -7,17 +7,23 @@ from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import GestureRecognizer, RunningMode, GestureRecognizerOptions, GestureRecognizerResult
 
 from .fps import FPS
+from .haloEffect import draw_halo_effect
 from .videoCaptureManager import video_capture_manager
 from .personRecogniser import PersonRecogniser
 
 WINDOW_NAME = "Hand Detection"
 
 class VideoGestureRecogniser:
-    def __init__(self, controller):
+    def __init__(self, controller, power_manager=None):
+        """
+        Initialize recognizer resources and subscriber list.
+        """
         self.model_path = os.path.join(os.path.dirname(__file__), "gesture_recognizer.task")
         # default value of 30 fps
         self.fps_manager = FPS(30)
-        self.subscriber = controller
+        self._is_low_power_mode = False
+        self.subscribers = [controller, power_manager]
+        self.subscribers = [subscriber for subscriber in self.subscribers if subscriber is not None]
         self.isRunning = True
         self.person_recognizer = PersonRecogniser()
 
@@ -25,14 +31,31 @@ class VideoGestureRecogniser:
         print("Stopping Gesture Recogniser...")
         self.isRunning = False
 
-    def update_subscriber(self, update):
-        self.subscriber.update(update)
+    def update_subscribers(self, update):
+        """
+        Publish the latest gesture update to all subscribers.
+        """
+        for subscriber in self.subscribers:
+            subscriber.update(update)
+
+    def add_subscriber(self, subscriber):
+        """
+        Register an additional subscriber for gesture updates.
+        """
+        if subscriber is not None and subscriber not in self.subscribers:
+            self.subscribers.append(subscriber)
 
     def set_low_power_mode(self):
         self.fps_manager.set_fps(1)
+        self._is_low_power_mode = True
 
     def set_high_power_mode(self):
         self.fps_manager.set_fps(30)
+        self._is_low_power_mode = False
+
+    def is_low_power_mode(self) -> bool:
+        """Return True when recognizer is currently in low-power mode."""
+        return self._is_low_power_mode
 
     def _create_recognizer(self):
         options = GestureRecognizerOptions(
@@ -56,10 +79,11 @@ class VideoGestureRecogniser:
         Run for each picture analysed by the recogniser.
         """
         if len(result.gestures) < 1:
+            self.update_subscribers(None)
             return
 
         gesture_name = result.gestures[0][0].category_name
-        self.update_subscriber(gesture_name)
+        self.update_subscribers(gesture_name)
     
     def _capture_frame(self, cap):
         """
@@ -70,7 +94,7 @@ class VideoGestureRecogniser:
             return None
         self.fps_manager.update()
         return frame
-
+    
     def _process_person_detection(self, frame):
         """
         Detect the main person in the frame and crop accordingly.
@@ -82,7 +106,7 @@ class VideoGestureRecogniser:
             left = max(0, left)
             bottom = min(frame.shape[0], bottom)
             right = min(frame.shape[1], right)
-            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+            draw_halo_effect(frame, (top, left, bottom, right))
             cropped_frame = frame[top:bottom, left:right]
             if cropped_frame.size == 0:
                 return frame
