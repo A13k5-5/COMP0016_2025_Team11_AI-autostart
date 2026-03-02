@@ -11,3 +11,4 @@ mediapipe==0.10.32
 
 AppOpener==1.7
 PySide6==6.9.2
+pystray==2.3.0
