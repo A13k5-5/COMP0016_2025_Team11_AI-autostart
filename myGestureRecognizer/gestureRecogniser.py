@@ -22,7 +22,6 @@ class VideoGestureRecogniser:
         # default value of 30 fps
         self.fps_manager = FPS(30)
         self._is_low_power_mode = False
-        self.subscribers = [controller, power_manager]
         self.subscribers = [subscriber for subscriber in self.subscribers if subscriber is not None]
         self.isRunning = True
         self.person_recognizer = PersonRecogniser()
