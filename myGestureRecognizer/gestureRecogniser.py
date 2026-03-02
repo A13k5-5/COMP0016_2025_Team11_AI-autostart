@@ -14,7 +14,7 @@ from .personRecogniser import PersonRecogniser
 WINDOW_NAME = "Hand Detection"
 
 class VideoGestureRecogniser:
-    def __init__(self, controller, power_manager=None):
+    def __init__(self, controller):
         """
         Initialize recognizer resources and subscriber list.
         """
@@ -22,7 +22,7 @@ class VideoGestureRecogniser:
         # default value of 30 fps
         self.fps_manager = FPS(30)
         self._is_low_power_mode = False
-        self.subscribers = [subscriber for subscriber in self.subscribers if subscriber is not None]
+        self.subscribers = [controller]
         self.isRunning = True
         self.person_recognizer = PersonRecogniser()
 
