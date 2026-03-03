@@ -1,6 +1,7 @@
+import os
 import AppOpener
 from myGestureRecognizer.gestureRecogniser import VideoGestureRecogniser
-from gui.actions import load_mapping
+from gui.actions import load_mapping, is_run_action, get_run_path
 from powerManager import PowerManager
 
 class GestureController:
@@ -50,6 +51,7 @@ class GestureController:
             - "stop"
             - "open:<app_name>"
             - "close:<app_name>"
+            - "run:<path_to_executable>"
 
         Args:
             action: Action text looked up from gesture_mapping.json for the
@@ -73,6 +75,12 @@ class GestureController:
             app = action.split(":", 1)[1].strip()
             if app:
                 AppOpener.close(app)
+            return
+
+        if is_run_action(action):
+            path = get_run_path(action)
+            if path:
+                os.startfile(path)
             return
 
     def run(self):

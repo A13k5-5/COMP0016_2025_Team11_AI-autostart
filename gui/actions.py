@@ -24,6 +24,25 @@ SUPPORTED_GESTURES = [
 # reserved for LPM activation
 RESERVED_GESTURES = {"Open_Palm"}
 
+# Prefix used for user-defined executable actions stored in the mapping file.
+RUN_PREFIX = "run:"
+
+
+def is_run_action(action: str) -> bool:
+    """Return True if *action* represents a user-chosen file to open."""
+    return action.startswith(RUN_PREFIX)
+
+
+def make_run_action(path: str) -> str:
+    """Build a run action string from a file path."""
+    return f"{RUN_PREFIX}{path.strip()}"
+
+
+def get_run_path(action: str) -> str:
+    """Extract the file path from a run action string."""
+    return action[len(RUN_PREFIX):]
+
+
 def load_mapping(path: str = MAPPING_PATH) -> dict:
     """
     Load and return the persisted gesture-to-action mapping from JSON.

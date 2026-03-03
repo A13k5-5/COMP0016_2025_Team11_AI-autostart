@@ -1,8 +1,8 @@
 {
-  "Pointing_Up": "open:notepad",
-  "Closed_Fist": "open:zen",
-  "Victory": "close:zen",
+  "Pointing_Up": "",
+  "Closed_Fist": "",
+  "Victory": "run:C:/Users/pison/OneDrive/Po\u010d\u00edta\u010d/ocino 50.mov",
   "ILoveYou": "stop",
-  "Thumb_Up": "close:notepad",
+  "Thumb_Up": "",
   "Thumb_Down": ""
 }
