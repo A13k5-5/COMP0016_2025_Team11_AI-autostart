@@ -5,8 +5,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 MAPPING_PATH = os.path.join(BASE_DIR, "gui", "gesture_mapping.json")
 
 SUPPORTED_ACTIONS = [
-    "open:zen",
-    "close:zen",
     "open:notepad",
     "close:notepad",
     "stop",

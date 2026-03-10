@@ -1,3 +1,5 @@
+import os
+
 from PySide6 import QtWidgets
 
 from gui.actions import (
@@ -15,16 +17,21 @@ class MappingWindow(QtWidgets.QWidget):
     """
     Window for configuring gesture-to-action mappings.
 
-    Rows are split into two groups:
+    Rows are split into three groups:
     - One row per entry in SUPPORTED_ACTIONS (predefined actions).
-    - One extra "Run executable" row where the user can browse to any .exe.
+    - One extra "Select Game" row where the user can browse game files.
+    - One extra "No GUI Game Engine" fixed row.
 
-    The run-executable row index is always ``len(SUPPORTED_ACTIONS)``.
+    The "Select Game" row index is always ``len(SUPPORTED_ACTIONS)``.
     """
 
-    # Index of the "Run executable" row (appended after SUPPORTED_ACTIONS rows)
+    # Indexes of special rows appended after SUPPORTED_ACTIONS rows
     _RUN_ROW: int = len(SUPPORTED_ACTIONS)
-    _TOTAL_ROWS: int = len(SUPPORTED_ACTIONS) + 1
+    _NO_GUI_GAME_ENGINE_ROW: int = len(SUPPORTED_ACTIONS) + 1
+    _TOTAL_ROWS: int = len(SUPPORTED_ACTIONS) + 2
+
+    # Temporary test path
+    _NO_GUI_GAME_ENGINE_RELATIVE_PATH = "gameEngine/gameEngine.exec"
 
     def __init__(self):
         super().__init__()
@@ -110,7 +117,7 @@ class MappingWindow(QtWidgets.QWidget):
 
     def _set_run_row(self, exe_path: str = "", gesture: str = "", uses_camera: bool = False) -> None:
         """
-        Populate the "Run executable" row with a path-picker widget and gesture
+        Populate the "Select Game" row with a path-picker widget and gesture
         dropdown.
 
         The action cell contains a horizontal sub-widget: a read-only label
@@ -141,14 +148,21 @@ class MappingWindow(QtWidgets.QWidget):
         self._run_browse_btn = browse_btn
         self._run_uses_camera_cb = uses_camera_cb
 
-        browse_btn.clicked.connect(self._browse_executable)
+        browse_btn.clicked.connect(self._browse_game_file)
 
         # --- Gesture cell ---
         self._set_gesture_cell(row, gesture)
 
-    def _browse_executable(self) -> None:
+    def _project_root(self) -> str:
+        return os.path.dirname(os.path.dirname(__file__))
+
+    def _to_relative_project_path(self, path: str) -> str:
+        rel_path = os.path.relpath(path, self._project_root())
+        return rel_path.replace("\\", "/")
+
+    def _browse_game_file(self) -> None:
         """
-        Open a file dialog to choose an executable; update the path label.
+        Open a file dialog to choose any file; update path label using a relative path.
         """
         path, _ = QtWidgets.QFileDialog.getOpenFileName(
             self,
@@ -157,8 +171,27 @@ class MappingWindow(QtWidgets.QWidget):
             "All Files (*)",
         )
         if path:
-            self._run_path_label.setText(path)
-            self._run_path_label.setToolTip(path)
+            relative_path = self._to_relative_project_path(os.path.abspath(path))
+            self._run_path_label.setText(relative_path)
+            self._run_path_label.setToolTip(relative_path)
+
+    def _set_no_gui_game_engine_row(self, gesture: str = "") -> None:
+        """Populate the fixed No GUI Game Engine row and gesture dropdown."""
+        row = self._NO_GUI_GAME_ENGINE_ROW
+
+        container = QtWidgets.QWidget()
+        h_layout = QtWidgets.QHBoxLayout(container)
+        h_layout.setContentsMargins(2, 2, 2, 2)
+
+        title_label = QtWidgets.QLabel("No GUI Game Engine")
+        path_label = QtWidgets.QLabel(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
+        path_label.setToolTip(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
+
+        h_layout.addWidget(title_label)
+        h_layout.addWidget(path_label, stretch=1)
+
+        self.table.setCellWidget(row, 0, container)
+        self._set_gesture_cell(row, gesture)
 
     def _get_run_exe_path(self) -> str:
         """Return the currently selected executable path, or empty string."""
@@ -177,12 +210,19 @@ class MappingWindow(QtWidgets.QWidget):
             self._set_action_cell(row, action)
             self._set_gesture_cell(row, action_to_gesture.get(action, ""))
 
-        # Run-executable row — find any existing run: entry in the mapping
-        run_action = next((a for a in action_to_gesture if is_run_action(a)), "")
+        # Special rows based on existing run: entries
+        no_gui_action = make_run_action(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
+        no_gui_gesture = action_to_gesture.get(no_gui_action, "")
+
+        run_action = next(
+            (a for a in action_to_gesture if is_run_action(a) and a != no_gui_action),
+            "",
+        )
         exe_path = get_run_path(run_action) if run_action else ""
         run_gesture = action_to_gesture.get(run_action, "")
         run_uses_camera = load_run_uses_camera()
         self._set_run_row(exe_path, run_gesture, run_uses_camera)
+        self._set_no_gui_game_engine_row(no_gui_gesture)
 
         self._refresh_gesture_options()
 
@@ -230,6 +270,12 @@ class MappingWindow(QtWidgets.QWidget):
         run_gesture = run_combo.currentText().strip() if run_combo else ""
         if exe_path and run_gesture and run_gesture != "None":
             out[run_gesture] = make_run_action(exe_path)
+
+        # No GUI Game Engine row (fixed executable)
+        no_gui_combo = self.table.cellWidget(self._NO_GUI_GAME_ENGINE_ROW, 1)
+        no_gui_gesture = no_gui_combo.currentText().strip() if no_gui_combo else ""
+        if no_gui_gesture and no_gui_gesture != "None":
+            out[no_gui_gesture] = make_run_action(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
 
         return out
 
