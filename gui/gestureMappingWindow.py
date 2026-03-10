@@ -235,7 +235,7 @@ class MappingWindow(QtWidgets.QWidget):
 
     def _browse_run_game_file(self) -> None:
         """Open a file dialog to choose a game file; store relative path, display filename only."""
-        path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select Game File", "", "All Files (*)")
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select Game File", "", "No UI Files (*.noui)")
         if path:
             self._run_game_full_path = self._to_relative_project_path(os.path.abspath(path))
             self._run_game_path_label.setText(os.path.basename(path))
