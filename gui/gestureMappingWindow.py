@@ -34,10 +34,6 @@ class MappingWindow(QtWidgets.QWidget):
         self._connect_signals()
         self.load_into_table()
 
-    # ------------------------------------------------------------------
-    # Setup helpers
-    # ------------------------------------------------------------------
-
     def _setup_window(self, title: str, width: int, height: int) -> None:
         """
         Configure window title, size, and root layout.
@@ -85,10 +81,6 @@ class MappingWindow(QtWidgets.QWidget):
         self.clear_btn.clicked.connect(self.clear_selections)
         self.save_btn.clicked.connect(self.save_from_table)
 
-    # ------------------------------------------------------------------
-    # Cell helpers
-    # ------------------------------------------------------------------
-
     def _create_gesture_combo(self, current_gesture: str) -> QtWidgets.QComboBox:
         """
         Create a gesture dropdown with a blank option and pre-selected value.
@@ -115,10 +107,6 @@ class MappingWindow(QtWidgets.QWidget):
         combo = self._create_gesture_combo(gesture)
         combo.currentTextChanged.connect(self._refresh_gesture_options)
         self.table.setCellWidget(row, 1, combo)
-
-    # ------------------------------------------------------------------
-    # Run-executable row helpers
-    # ------------------------------------------------------------------
 
     def _set_run_row(self, exe_path: str = "", gesture: str = "", uses_camera: bool = False) -> None:
         """
@@ -176,10 +164,6 @@ class MappingWindow(QtWidgets.QWidget):
         """Return the currently selected executable path, or empty string."""
         text = self._run_path_label.text().strip()
         return "" if text == "No file selected" else text
-
-    # ------------------------------------------------------------------
-    # Table load / save
-    # ------------------------------------------------------------------
 
     def load_into_table(self) -> None:
         """
