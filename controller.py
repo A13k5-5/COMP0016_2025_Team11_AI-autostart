@@ -1,4 +1,5 @@
 import os
+from time import time
 import AppOpener
 from myGestureRecognizer.gestureRecogniser import VideoGestureRecogniser
 from gui.actions import load_mapping, is_run_action, get_run_path
@@ -15,6 +16,8 @@ class GestureController:
         self.videoGestureRecogniser.add_subscriber(self.powerManager)
 
         self.prevUpdate = None
+        self.last_gesture_detected_at = 0.0
+        self.gesture_dropout_grace_seconds = 0.8
 
         self.gesture_mapping = load_mapping()
 
@@ -25,10 +28,18 @@ class GestureController:
         Args:
             update: Detected gesture name, or None when no gesture is detected.
         """
+        now = time()
+
         # no gesture detected
         if update is None:
-            self.prevUpdate = None
+            if (
+                self.prevUpdate is not None
+                and (now - self.last_gesture_detected_at) >= self.gesture_dropout_grace_seconds
+            ):
+                self.prevUpdate = None
             return
+
+        self.last_gesture_detected_at = now
 
         # reserved for low-power mode handling in PowerManager
         if update == "Open_Palm":
