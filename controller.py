@@ -2,8 +2,9 @@ import os
 from time import time
 import AppOpener
 from myGestureRecognizer.gestureRecogniser import VideoGestureRecogniser
-from gui.actions import load_mapping, is_run_action, get_run_path
+from gui.actions import load_mapping, load_run_uses_camera, is_run_action, get_run_path
 from powerManager import PowerManager
+from cameraManager import CameraManager
 
 class GestureController:
     """
@@ -14,12 +15,33 @@ class GestureController:
         self.powerManager = PowerManager(self.videoGestureRecogniser)
         # power manager is added afterwards as a subscriber since it needs videoGestureRecogniser as an argument
         self.videoGestureRecogniser.add_subscriber(self.powerManager)
+        self.cameraManager = CameraManager(
+            stop_capture=lambda: self.videoGestureRecogniser.stop(),
+            resume_capture=self._resume_capture_after_handoff,
+        )
 
         self.prevUpdate = None
         self.last_gesture_detected_at = 0.0
         self.gesture_dropout_grace_seconds = 0.8
 
         self.gesture_mapping = load_mapping()
+        self.run_uses_camera = load_run_uses_camera()
+
+    def _rebuild_recogniser(self) -> None:
+        """
+        Create a fresh recognizer instance and rewire subscribers.
+        """
+        self.videoGestureRecogniser = VideoGestureRecogniser(self)
+        self.powerManager = PowerManager(self.videoGestureRecogniser)
+        self.videoGestureRecogniser.add_subscriber(self.powerManager)
+        self.prevUpdate = None
+
+    def _resume_capture_after_handoff(self) -> None:
+        """
+        Rebuild recognizer and resume capture after external app exits.
+        """
+        self._rebuild_recogniser()
+        self.videoGestureRecogniser.run()
 
     def update(self, update: str | None):
         """
@@ -91,7 +113,10 @@ class GestureController:
         if is_run_action(action):
             path = get_run_path(action)
             if path:
-                os.startfile(path)
+                if self.run_uses_camera:
+                    self.cameraManager.handoff_to_process(path)
+                else:
+                    os.startfile(path)
             return
 
     def run(self):
