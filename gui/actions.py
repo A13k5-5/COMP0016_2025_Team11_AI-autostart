@@ -25,6 +25,7 @@ RESERVED_GESTURES = {"Open_Palm"}
 # Prefix used for user-defined executable actions stored in the mapping file.
 RUN_PREFIX = "run:"
 RUN_USES_CAMERA_KEY = "run_uses_camera"
+GAME_RUN_PATH_KEY = "game_run_path"
 
 def is_run_action(action: str) -> bool:
     """Return True if *action* represents a user-chosen file to open."""
@@ -57,12 +58,21 @@ def load_run_uses_camera(path: str = MAPPING_PATH) -> bool:
         data = json.load(f)
     return bool(data.get(RUN_USES_CAMERA_KEY, False))
 
-def save_mapping(mapping: dict, path: str = MAPPING_PATH, run_uses_camera: bool = False) -> None:
+def load_game_run_path(path: str = MAPPING_PATH) -> str:
+    """
+    Load the persisted file path for the run-game row.
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return str(data.get(GAME_RUN_PATH_KEY, "")).strip()
+
+def save_mapping(mapping: dict, path: str = MAPPING_PATH, run_uses_camera: bool = False, game_run_path: str = "") -> None:
     """
     Persist the provided gesture-to-action mapping to JSON.
     """
     out = {g: str(mapping.get(g, "")).strip() for g in SUPPORTED_GESTURES}
     out[RUN_USES_CAMERA_KEY] = bool(run_uses_camera)
-    
+    out[GAME_RUN_PATH_KEY] = str(game_run_path).strip()
+
     with open(path, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2)
