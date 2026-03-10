@@ -3,6 +3,7 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 MAPPING_PATH = os.path.join(BASE_DIR, "gui", "gesture_mapping.json")
+APP_DATA_PATH = os.path.join(BASE_DIR, "app_data.json")
 
 SUPPORTED_ACTIONS = [
     "open:notepad",
@@ -26,6 +27,7 @@ RESERVED_GESTURES = {"Open_Palm"}
 RUN_PREFIX = "run:"
 RUN_USES_CAMERA_KEY = "run_uses_camera"
 GAME_RUN_PATH_KEY = "game_run_path"
+DYNAMIC_APPS_KEY = "dynamic_apps"
 
 def is_run_action(action: str) -> bool:
     """Return True if *action* represents a user-chosen file to open."""
@@ -50,6 +52,21 @@ def load_mapping(path: str = MAPPING_PATH) -> dict:
         data = json.load(f)
     return {g: str(data.get(g, "")).strip() for g in SUPPORTED_GESTURES}
 
+def load_app_data(path: str = APP_DATA_PATH) -> dict:
+    """
+    Load app_data.json and return the app-name -> app-id mapping.
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def load_dynamic_apps(path: str = MAPPING_PATH) -> list:
+    """
+    Load the ordered list of dynamically added app names from the mapping file.
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return list(data.get(DYNAMIC_APPS_KEY, []))
+
 def load_run_uses_camera(path: str = MAPPING_PATH) -> bool:
     """
     Load the persisted camera-use flag for the run action row.
@@ -66,13 +83,14 @@ def load_game_run_path(path: str = MAPPING_PATH) -> str:
         data = json.load(f)
     return str(data.get(GAME_RUN_PATH_KEY, "")).strip()
 
-def save_mapping(mapping: dict, path: str = MAPPING_PATH, run_uses_camera: bool = False, game_run_path: str = "") -> None:
+def save_mapping(mapping: dict, path: str = MAPPING_PATH, run_uses_camera: bool = False, game_run_path: str = "", dynamic_apps: list = None) -> None:
     """
     Persist the provided gesture-to-action mapping to JSON.
     """
     out = {g: str(mapping.get(g, "")).strip() for g in SUPPORTED_GESTURES}
     out[RUN_USES_CAMERA_KEY] = bool(run_uses_camera)
     out[GAME_RUN_PATH_KEY] = str(game_run_path).strip()
+    out[DYNAMIC_APPS_KEY] = list(dynamic_apps) if dynamic_apps else []
 
     with open(path, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2)

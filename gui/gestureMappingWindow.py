@@ -8,11 +8,62 @@ from gui.actions import (
     load_mapping,
     load_run_uses_camera,
     load_game_run_path,
+    load_app_data,
+    load_dynamic_apps,
     save_mapping,
     is_run_action,
     make_run_action,
     get_run_path,
 )
+
+
+class AddAppDialog(QtWidgets.QDialog):
+    """
+    Modal popup that lets the user pick an app from app_data.json.
+    Returns the selected app name (lowercase key) via selected_app().
+    """
+
+    def __init__(self, app_names: list, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Add App")
+        self.resize(380, 480)
+
+        layout = QtWidgets.QVBoxLayout(self)
+
+        self._search = QtWidgets.QLineEdit()
+        self._search.setPlaceholderText("Search apps…")
+        layout.addWidget(self._search)
+
+        self._list = QtWidgets.QListWidget()
+        self._all_names = sorted(app_names)
+        self._list.addItems(self._all_names)
+        layout.addWidget(self._list)
+
+        btn_row = QtWidgets.QHBoxLayout()
+        self._add_btn = QtWidgets.QPushButton("Add")
+        self._add_btn.setEnabled(False)
+        cancel_btn = QtWidgets.QPushButton("Cancel")
+        btn_row.addWidget(self._add_btn)
+        btn_row.addWidget(cancel_btn)
+        layout.addLayout(btn_row)
+
+        self._search.textChanged.connect(self._filter)
+        self._list.itemSelectionChanged.connect(self._on_selection_changed)
+        self._list.itemDoubleClicked.connect(lambda _: self.accept())
+        self._add_btn.clicked.connect(self.accept)
+        cancel_btn.clicked.connect(self.reject)
+
+    def _filter(self, text: str) -> None:
+        for i in range(self._list.count()):
+            item = self._list.item(i)
+            item.setHidden(text.lower() not in item.text().lower())
+
+    def _on_selection_changed(self) -> None:
+        self._add_btn.setEnabled(bool(self._list.selectedItems()))
+
+    def selected_app(self) -> str:
+        items = self._list.selectedItems()
+        return items[0].text() if items else ""
 
 class MappingWindow(QtWidgets.QWidget):
     """
@@ -87,6 +138,7 @@ class MappingWindow(QtWidgets.QWidget):
         self.clear_btn = QtWidgets.QPushButton("Clear Selections")
         self.save_btn = QtWidgets.QPushButton("Save")
         self.status = QtWidgets.QLabel("")
+        self._add_app_btn = QtWidgets.QPushButton("+ Add App")
 
         self.button_row = QtWidgets.QHBoxLayout()
 
@@ -96,6 +148,7 @@ class MappingWindow(QtWidgets.QWidget):
         """
         self.layout.addWidget(QtWidgets.QLabel("App Actions"))
         self.layout.addWidget(self.app_table)
+        self.layout.addWidget(self._add_app_btn)
 
         self.layout.addWidget(QtWidgets.QLabel("Game Actions"))
         self.layout.addWidget(self.game_table)
@@ -133,6 +186,7 @@ class MappingWindow(QtWidgets.QWidget):
         self.reload_btn.clicked.connect(self.load_into_table)
         self.clear_btn.clicked.connect(self.clear_selections)
         self.save_btn.clicked.connect(self.save_from_table)
+        self._add_app_btn.clicked.connect(self._open_add_app_dialog)
 
     def _create_gesture_combo(self, current_gesture: str) -> QtWidgets.QComboBox:
         """
@@ -171,6 +225,29 @@ class MappingWindow(QtWidgets.QWidget):
         """Populate the fixed No GUI Game Engine row in the game table."""
         self._set_action_cell(self.game_table, self._GAME_ENGINE_ROW, "No GUI Game Engine")
         self._set_gesture_cell(self.game_table, self._GAME_ENGINE_ROW, gesture, col=1)
+
+    def _clear_dynamic_app_rows(self) -> None:
+        """Remove all rows that were added dynamically beyond the static ones."""
+        while self.app_table.rowCount() > self._APP_TABLE_ROWS:
+            self.app_table.removeRow(self.app_table.rowCount() - 1)
+
+    def _add_app_row(self, app_name: str, open_gesture: str = "", close_gesture: str = "") -> None:
+        """Append open and close rows for *app_name* to the app table."""
+        for prefix, gesture in (("open", open_gesture), ("close", close_gesture)):
+            row = self.app_table.rowCount()
+            self.app_table.insertRow(row)
+            self._set_action_cell(self.app_table, row, f"{prefix}:{app_name}")
+            self._set_gesture_cell(self.app_table, row, gesture)
+        self._refresh_gesture_options()
+
+    def _open_add_app_dialog(self) -> None:
+        """Show the app picker popup and add the chosen app's rows."""
+        app_names = list(load_app_data().keys())
+        dlg = AddAppDialog(app_names, parent=self)
+        if dlg.exec() == QtWidgets.QDialog.Accepted:
+            app_name = dlg.selected_app()
+            if app_name:
+                self._add_app_row(app_name)
 
     def _set_run_row(self, exe_path: str = "", gesture: str = "", uses_camera: bool = False) -> None:
         """Populate the run-file row in the file opening table."""
@@ -251,7 +328,7 @@ class MappingWindow(QtWidgets.QWidget):
 
     def _all_combos(self):
         """Yield all gesture combos from all tables."""
-        for row in range(self._APP_TABLE_ROWS):
+        for row in range(self.app_table.rowCount()):  # includes dynamic rows
             combo = self.app_table.cellWidget(row, 1)
             if combo is not None:
                 yield combo
@@ -275,6 +352,17 @@ class MappingWindow(QtWidgets.QWidget):
         for row, action in enumerate(SUPPORTED_ACTIONS):
             self._set_action_cell(self.app_table, row, action)
             self._set_gesture_cell(self.app_table, row, action_to_gesture.get(action, ""))
+
+        # Dynamic app rows — restore from saved list
+        self._clear_dynamic_app_rows()
+        for app_name in load_dynamic_apps():
+            open_action = f"open:{app_name}"
+            close_action = f"close:{app_name}"
+            self._add_app_row(
+                app_name,
+                open_gesture=action_to_gesture.get(open_action, ""),
+                close_gesture=action_to_gesture.get(close_action, ""),
+            )
 
         # Game table
         no_gui_action = make_run_action(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
@@ -323,11 +411,13 @@ class MappingWindow(QtWidgets.QWidget):
         """
         out = {g: "" for g in SUPPORTED_GESTURES}
 
-        # App table
-        for row, action in enumerate(SUPPORTED_ACTIONS):
+        # App table (static + dynamic rows)
+        for row in range(self.app_table.rowCount()):
+            action_item = self.app_table.item(row, 0)
+            action = action_item.text().strip() if action_item else ""
             combo = self.app_table.cellWidget(row, 1)
-            gesture = combo.currentText().strip()
-            if gesture and gesture != "None":
+            gesture = combo.currentText().strip() if combo else ""
+            if action and gesture and gesture != "None":
                 out[gesture] = action
 
         # Game table — No GUI Game Engine row
@@ -378,9 +468,26 @@ class MappingWindow(QtWidgets.QWidget):
         Persist current table selections to the JSON mapping file.
         """
         out = self._collect_mapping_from_table()
+
+        # Collect ordered list of dynamic app names
+        dynamic_apps = []
+        seen: set = set()
+        for row in range(self._APP_TABLE_ROWS, self.app_table.rowCount()):
+            action_item = self.app_table.item(row, 0)
+            if action_item:
+                action = action_item.text().strip()
+                for prefix in ("open:", "close:"):
+                    if action.startswith(prefix):
+                        name = action[len(prefix):]
+                        if name not in seen:
+                            seen.add(name)
+                            dynamic_apps.append(name)
+                        break
+
         save_mapping(
             out,
             run_uses_camera=self._run_uses_camera_cb.isChecked(),
             game_run_path=self._get_run_game_exe_path(),
+            dynamic_apps=dynamic_apps,
         )
         self.status.setText("Saved to file.")

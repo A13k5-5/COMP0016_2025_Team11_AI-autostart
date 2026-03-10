@@ -3,6 +3,11 @@
   "Closed_Fist": "",
   "Victory": "run:C:/Users/pison/OneDrive/Po\u010d\u00edta\u010d/ocino 50.mov",
   "ILoveYou": "stop",
-  "Thumb_Up": "",
-  "Thumb_Down": ""
+  "Thumb_Up": "open:calculator",
+  "Thumb_Down": "close:calculator",
+  "run_uses_camera": false,
+  "game_run_path": "",
+  "dynamic_apps": [
+    "calculator"
+  ]
 }
