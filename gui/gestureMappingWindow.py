@@ -4,6 +4,7 @@ from gui.actions import (
     SUPPORTED_GESTURES,
     SUPPORTED_ACTIONS,
     load_mapping,
+    load_run_uses_camera,
     save_mapping,
     is_run_action,
     make_run_action,
@@ -51,7 +52,10 @@ class MappingWindow(QtWidgets.QWidget):
         """
         self.table = QtWidgets.QTableWidget(self._TOTAL_ROWS, 2)
         self.table.setHorizontalHeaderLabels(["Action", "Gesture"])
-        self.table.horizontalHeader().setStretchLastSection(True)
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Interactive) 
+        header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch) 
+        self.table.setColumnWidth(0, 280)
 
         self.reload_btn = QtWidgets.QPushButton("Discard Changes")
         self.clear_btn = QtWidgets.QPushButton("Clear Selections")
@@ -116,7 +120,7 @@ class MappingWindow(QtWidgets.QWidget):
     # Run-executable row helpers
     # ------------------------------------------------------------------
 
-    def _set_run_row(self, exe_path: str = "", gesture: str = "") -> None:
+    def _set_run_row(self, exe_path: str = "", gesture: str = "", uses_camera: bool = False) -> None:
         """
         Populate the "Run executable" row with a path-picker widget and gesture
         dropdown.
@@ -135,15 +139,19 @@ class MappingWindow(QtWidgets.QWidget):
         path_label.setToolTip(exe_path)
         browse_btn = QtWidgets.QPushButton("Browse…")
         browse_btn.setFixedWidth(70)
+        uses_camera_cb = QtWidgets.QCheckBox("Uses camera")
+        uses_camera_cb.setChecked(uses_camera)
 
         h_layout.addWidget(path_label, stretch=1)
         h_layout.addWidget(browse_btn)
+        h_layout.addWidget(uses_camera_cb)
 
         self.table.setCellWidget(row, 0, container)
 
         # Keep references so we can read/write the path later
         self._run_path_label = path_label
         self._run_browse_btn = browse_btn
+        self._run_uses_camera_cb = uses_camera_cb
 
         browse_btn.clicked.connect(self._browse_executable)
 
@@ -189,7 +197,8 @@ class MappingWindow(QtWidgets.QWidget):
         run_action = next((a for a in action_to_gesture if is_run_action(a)), "")
         exe_path = get_run_path(run_action) if run_action else ""
         run_gesture = action_to_gesture.get(run_action, "")
-        self._set_run_row(exe_path, run_gesture)
+        run_uses_camera = load_run_uses_camera()
+        self._set_run_row(exe_path, run_gesture, run_uses_camera)
 
         self._refresh_gesture_options()
 
@@ -254,6 +263,7 @@ class MappingWindow(QtWidgets.QWidget):
         # Also clear the executable path label
         self._run_path_label.setText("No file selected")
         self._run_path_label.setToolTip("")
+        self._run_uses_camera_cb.setChecked(False)
 
         self._refresh_gesture_options()
         self.status.setText("Selections cleared.")
@@ -263,5 +273,5 @@ class MappingWindow(QtWidgets.QWidget):
         Persist current table selections to the JSON mapping file.
         """
         out = self._collect_mapping_from_table()
-        save_mapping(out)
+        save_mapping(out, run_uses_camera=self._run_uses_camera_cb.isChecked())
         self.status.setText("Saved to file.")
