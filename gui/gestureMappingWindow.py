@@ -17,25 +17,25 @@ class MappingWindow(QtWidgets.QWidget):
     """
     Window for configuring gesture-to-action mappings.
 
-    Rows are split into three groups:
-    - One row per entry in SUPPORTED_ACTIONS (predefined actions).
-    - One extra "Select Game" row where the user can browse game files.
-    - One extra "No GUI Game Engine" fixed row.
-
-    The "Select Game" row index is always ``len(SUPPORTED_ACTIONS)``.
+    Layout:
+    - App table:  one row per SUPPORTED_ACTIONS entry.
+    - Game table: No GUI Game Engine row (fixed path), then a run-file row.
+    - Info row:   read-only display of the reserved Open Palm gesture.
     """
 
-    # Indexes of special rows appended after SUPPORTED_ACTIONS rows
-    _RUN_ROW: int = len(SUPPORTED_ACTIONS)
-    _NO_GUI_GAME_ENGINE_ROW: int = len(SUPPORTED_ACTIONS) + 1
-    _TOTAL_ROWS: int = len(SUPPORTED_ACTIONS) + 2
+    # App table
+    _APP_TABLE_ROWS: int = len(SUPPORTED_ACTIONS)
 
-    # Temporary test path
+    # Game table row indices
+    _GAME_ENGINE_ROW: int = 0
+    _RUN_ROW: int = 1
+    _GAME_TABLE_ROWS: int = 2
+
     _NO_GUI_GAME_ENGINE_RELATIVE_PATH = "gameEngine/gameEngine.exec"
 
     def __init__(self):
         super().__init__()
-        self._setup_window("Customize the mapping between gestures and actions.", 620, 360)
+        self._setup_window("Customize the mapping between gestures and actions.", 620, 520)
         self._create_widgets()
         self._add_widgets()
         self._connect_signals()
@@ -49,16 +49,23 @@ class MappingWindow(QtWidgets.QWidget):
         self.resize(width, height)
         self.layout = QtWidgets.QVBoxLayout(self)
 
+    def _init_table(self, table: QtWidgets.QTableWidget) -> None:
+        """Apply shared column/header settings to a table."""
+        table.setHorizontalHeaderLabels(["Action", "Gesture"])
+        header = table.horizontalHeader()
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Interactive)
+        header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+        table.setColumnWidth(0, 280)
+
     def _create_widgets(self) -> None:
         """
         Create all widgets used by the mapping editor.
         """
-        self.table = QtWidgets.QTableWidget(self._TOTAL_ROWS, 2)
-        self.table.setHorizontalHeaderLabels(["Action", "Gesture"])
-        header = self.table.horizontalHeader()
-        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Interactive) 
-        header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch) 
-        self.table.setColumnWidth(0, 280)
+        self.app_table = QtWidgets.QTableWidget(self._APP_TABLE_ROWS, 2)
+        self._init_table(self.app_table)
+
+        self.game_table = QtWidgets.QTableWidget(self._GAME_TABLE_ROWS, 2)
+        self._init_table(self.game_table)
 
         self.reload_btn = QtWidgets.QPushButton("Discard Changes")
         self.clear_btn = QtWidgets.QPushButton("Clear Selections")
@@ -71,7 +78,25 @@ class MappingWindow(QtWidgets.QWidget):
         """
         Insert widgets into the main layout.
         """
-        self.layout.addWidget(self.table)
+        self.layout.addWidget(QtWidgets.QLabel("App Actions"))
+        self.layout.addWidget(self.app_table)
+
+        self.layout.addWidget(QtWidgets.QLabel("Game Engine"))
+        self.layout.addWidget(self.game_table)
+
+        # Read-only row showing the reserved Open Palm gesture
+        info_table = QtWidgets.QTableWidget(1, 2)
+        info_table.horizontalHeader().hide()
+        info_table.verticalHeader().hide()
+        info_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        info_table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+        info_table.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.Interactive)
+        info_table.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+        info_table.setColumnWidth(0, 280)
+        info_table.setFixedHeight(info_table.rowHeight(0) + 4)
+        info_table.setItem(0, 0, QtWidgets.QTableWidgetItem("Deactivate Low Power Mode"))
+        info_table.setItem(0, 1, QtWidgets.QTableWidgetItem("Open_Palm"))
+        self.layout.addWidget(info_table)
 
         self.button_row.addWidget(self.reload_btn)
         self.button_row.addWidget(self.clear_btn)
@@ -99,151 +124,130 @@ class MappingWindow(QtWidgets.QWidget):
         combo.setCurrentIndex(idx if idx >= 0 else 0)
         return combo
 
-    def _set_action_cell(self, row: int, action: str) -> None:
+    def _set_action_cell(self, table: QtWidgets.QTableWidget, row: int, action: str) -> None:
         """
         Set the action text in the left column (read-only).
         """
         action_item = QtWidgets.QTableWidgetItem(action)
         action_item.setFlags(action_item.flags() & ~QtWidgets.QTableWidgetItem().flags().ItemIsEditable)
-        self.table.setItem(row, 0, action_item)
+        table.setItem(row, 0, action_item)
 
-    def _set_gesture_cell(self, row: int, gesture: str) -> None:
+    def _set_gesture_cell(self, table: QtWidgets.QTableWidget, row: int, gesture: str) -> None:
         """
         Set a gesture dropdown for the provided row.
         """
         combo = self._create_gesture_combo(gesture)
         combo.currentTextChanged.connect(self._refresh_gesture_options)
-        self.table.setCellWidget(row, 1, combo)
-
-    def _set_run_row(self, exe_path: str = "", gesture: str = "", uses_camera: bool = False) -> None:
-        """
-        Populate the "Select Game" row with a path-picker widget and gesture
-        dropdown.
-
-        The action cell contains a horizontal sub-widget: a read-only label
-        showing the chosen path and a "Browse…" button that opens a file dialog.
-        """
-        row = self._RUN_ROW
-
-        # --- Action cell: label + browse button ---
-        container = QtWidgets.QWidget()
-        h_layout = QtWidgets.QHBoxLayout(container)
-        h_layout.setContentsMargins(2, 2, 2, 2)
-
-        path_label = QtWidgets.QLabel(exe_path or "No file selected")
-        path_label.setToolTip(exe_path)
-        browse_btn = QtWidgets.QPushButton("Browse…")
-        browse_btn.setFixedWidth(70)
-        uses_camera_cb = QtWidgets.QCheckBox("Uses camera")
-        uses_camera_cb.setChecked(uses_camera)
-
-        h_layout.addWidget(path_label, stretch=1)
-        h_layout.addWidget(browse_btn)
-        h_layout.addWidget(uses_camera_cb)
-
-        self.table.setCellWidget(row, 0, container)
-
-        # Keep references so we can read/write the path later
-        self._run_path_label = path_label
-        self._run_browse_btn = browse_btn
-        self._run_uses_camera_cb = uses_camera_cb
-
-        browse_btn.clicked.connect(self._browse_game_file)
-
-        # --- Gesture cell ---
-        self._set_gesture_cell(row, gesture)
+        table.setCellWidget(row, 1, combo)
 
     def _project_root(self) -> str:
         return os.path.dirname(os.path.dirname(__file__))
 
     def _to_relative_project_path(self, path: str) -> str:
-        rel_path = os.path.relpath(path, self._project_root())
-        return rel_path.replace("\\", "/")
-
-    def _browse_game_file(self) -> None:
-        """
-        Open a file dialog to choose any file; update path label using a relative path.
-        """
-        path, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self,
-            "Select File",
-            "",
-            "All Files (*)",
-        )
-        if path:
-            relative_path = self._to_relative_project_path(os.path.abspath(path))
-            self._run_path_label.setText(relative_path)
-            self._run_path_label.setToolTip(relative_path)
+        return os.path.relpath(path, self._project_root()).replace("\\", "/")
 
     def _set_no_gui_game_engine_row(self, gesture: str = "") -> None:
-        """Populate the fixed No GUI Game Engine row and gesture dropdown."""
-        row = self._NO_GUI_GAME_ENGINE_ROW
+        """Populate the fixed No GUI Game Engine row in the game table."""
+        container = QtWidgets.QWidget()
+        h_layout = QtWidgets.QHBoxLayout(container)
+        h_layout.setContentsMargins(2, 2, 2, 2)
+        h_layout.addWidget(QtWidgets.QLabel("No GUI Game Engine"))
+        path_label = QtWidgets.QLabel(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
+        path_label.setToolTip(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
+        h_layout.addWidget(path_label, stretch=1)
+        self.game_table.setCellWidget(self._GAME_ENGINE_ROW, 0, container)
+        self._set_gesture_cell(self.game_table, self._GAME_ENGINE_ROW, gesture)
 
+    def _set_run_row(self, exe_path: str = "", gesture: str = "", uses_camera: bool = False) -> None:
+        """Populate the run-file row in the game table."""
         container = QtWidgets.QWidget()
         h_layout = QtWidgets.QHBoxLayout(container)
         h_layout.setContentsMargins(2, 2, 2, 2)
 
-        title_label = QtWidgets.QLabel("No GUI Game Engine")
-        path_label = QtWidgets.QLabel(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
-        path_label.setToolTip(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
+        self._run_path_label = QtWidgets.QLabel(exe_path or "No file selected")
+        self._run_path_label.setToolTip(exe_path)
+        self._run_browse_btn = QtWidgets.QPushButton("Browse…")
+        self._run_browse_btn.setFixedWidth(70)
+        self._run_uses_camera_cb = QtWidgets.QCheckBox("Uses camera")
+        self._run_uses_camera_cb.setChecked(uses_camera)
 
-        h_layout.addWidget(title_label)
-        h_layout.addWidget(path_label, stretch=1)
+        h_layout.addWidget(self._run_path_label, stretch=1)
+        h_layout.addWidget(self._run_browse_btn)
+        h_layout.addWidget(self._run_uses_camera_cb)
 
-        self.table.setCellWidget(row, 0, container)
-        self._set_gesture_cell(row, gesture)
+        self.game_table.setCellWidget(self._RUN_ROW, 0, container)
+        self._run_browse_btn.clicked.connect(self._browse_run_file)
+        self._set_gesture_cell(self.game_table, self._RUN_ROW, gesture)
+
+    def _browse_run_file(self) -> None:
+        """Open a file dialog to choose any file; update path label with a relative path."""
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select File", "", "All Files (*)")
+        if path:
+            relative_path = self._to_relative_project_path(os.path.abspath(path))
+            self._run_path_label.setText(relative_path)
+            self._run_path_label.setToolTip(relative_path)
 
     def _get_run_exe_path(self) -> str:
         """Return the currently selected executable path, or empty string."""
         text = self._run_path_label.text().strip()
         return "" if text == "No file selected" else text
 
+    def _get_run_exe_path(self) -> str:
+        """Return the currently selected run file path, or empty string."""
+        text = self._run_path_label.text().strip()
+        return "" if text == "No file selected" else text
+
+    def _all_combos(self):
+        """Yield all gesture combos from both tables."""
+        for row in range(self._APP_TABLE_ROWS):
+            combo = self.app_table.cellWidget(row, 1)
+            if combo is not None:
+                yield combo
+        for row in range(self._GAME_TABLE_ROWS):
+            combo = self.game_table.cellWidget(row, 1)
+            if combo is not None:
+                yield combo
+
     def load_into_table(self) -> None:
         """
-        Load mapping file and populate table rows.
+        Load mapping file and populate both tables.
         """
         mapping = load_mapping()
         action_to_gesture = {a: g for g, a in mapping.items() if a}
 
-        # Predefined-action rows
+        # App table
         for row, action in enumerate(SUPPORTED_ACTIONS):
-            self._set_action_cell(row, action)
-            self._set_gesture_cell(row, action_to_gesture.get(action, ""))
+            self._set_action_cell(self.app_table, row, action)
+            self._set_gesture_cell(self.app_table, row, action_to_gesture.get(action, ""))
 
-        # Special rows based on existing run: entries
+        # Game table
         no_gui_action = make_run_action(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
         no_gui_gesture = action_to_gesture.get(no_gui_action, "")
+        self._set_no_gui_game_engine_row(no_gui_gesture)
 
         run_action = next(
-            (a for a in action_to_gesture if is_run_action(a) and a != no_gui_action),
-            "",
+            (a for a in action_to_gesture if is_run_action(a) and a != no_gui_action), ""
         )
         exe_path = get_run_path(run_action) if run_action else ""
         run_gesture = action_to_gesture.get(run_action, "")
         run_uses_camera = load_run_uses_camera()
         self._set_run_row(exe_path, run_gesture, run_uses_camera)
-        self._set_no_gui_game_engine_row(no_gui_gesture)
 
         self._refresh_gesture_options()
-
         self.status.setText("Previous selections loaded from file.")
 
     def _refresh_gesture_options(self) -> None:
         """
         Keep each dropdown limited to gestures not already used in other rows.
         """
-        combos = [self.table.cellWidget(row, 1) for row in range(self._TOTAL_ROWS)]
-        selected = [combo.currentText().strip() for combo in combos if combo is not None]
+        combos = list(self._all_combos())
+        selected = [c.currentText().strip() for c in combos]
 
         for combo in combos:
-            if combo is None:
-                continue
-
             current = combo.currentText().strip()
             used_by_others = {g for g in selected if g and g != current}
             available = ["None", *[g for g in SUPPORTED_GESTURES if g not in used_by_others]]
 
-            # Block signals while mutating options to avoid recursive refresh calls.
             combo.blockSignals(True)
             combo.clear()
             combo.addItems(available)
@@ -257,25 +261,25 @@ class MappingWindow(QtWidgets.QWidget):
         """
         out = {g: "" for g in SUPPORTED_GESTURES}
 
-        # Predefined-action rows
+        # App table
         for row, action in enumerate(SUPPORTED_ACTIONS):
-            combo = self.table.cellWidget(row, 1)
+            combo = self.app_table.cellWidget(row, 1)
             gesture = combo.currentText().strip()
             if gesture and gesture != "None":
                 out[gesture] = action
 
-        # Run-executable row
-        exe_path = self._get_run_exe_path()
-        run_combo = self.table.cellWidget(self._RUN_ROW, 1)
-        run_gesture = run_combo.currentText().strip() if run_combo else ""
-        if exe_path and run_gesture and run_gesture != "None":
-            out[run_gesture] = make_run_action(exe_path)
-
-        # No GUI Game Engine row (fixed executable)
-        no_gui_combo = self.table.cellWidget(self._NO_GUI_GAME_ENGINE_ROW, 1)
+        # Game table — No GUI Game Engine row
+        no_gui_combo = self.game_table.cellWidget(self._GAME_ENGINE_ROW, 1)
         no_gui_gesture = no_gui_combo.currentText().strip() if no_gui_combo else ""
         if no_gui_gesture and no_gui_gesture != "None":
             out[no_gui_gesture] = make_run_action(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
+
+        # Game table — run-file row
+        exe_path = self._get_run_exe_path()
+        run_combo = self.game_table.cellWidget(self._RUN_ROW, 1)
+        run_gesture = run_combo.currentText().strip() if run_combo else ""
+        if exe_path and run_gesture and run_gesture != "None":
+            out[run_gesture] = make_run_action(exe_path)
 
         return out
 
@@ -283,14 +287,11 @@ class MappingWindow(QtWidgets.QWidget):
         """
         Reset all gesture selections to blank without saving.
         """
-        for row in range(self._TOTAL_ROWS):
-            combo = self.table.cellWidget(row, 1)
-            if combo is not None:
-                combo.blockSignals(True)
-                combo.setCurrentIndex(0)
-                combo.blockSignals(False)
+        for combo in self._all_combos():
+            combo.blockSignals(True)
+            combo.setCurrentIndex(0)
+            combo.blockSignals(False)
 
-        # Also clear the executable path label
         self._run_path_label.setText("No file selected")
         self._run_path_label.setToolTip("")
         self._run_uses_camera_cb.setChecked(False)
