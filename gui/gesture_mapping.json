@@ -1,13 +1,22 @@
 {
-  "Pointing_Up": "",
+  "Pointing_Up": "run:../Downloads/icons8-victory-hand-48.png",
   "Closed_Fist": "",
   "Victory": "run:C:/Users/pison/OneDrive/Po\u010d\u00edta\u010d/ocino 50.mov",
   "ILoveYou": "stop",
   "Thumb_Up": "open:calculator",
   "Thumb_Down": "close:calculator",
-  "run_uses_camera": false,
-  "game_run_path": "",
   "dynamic_apps": [
     "calculator"
+  ],
+  "game_run_paths": [],
+  "file_run_entries": [
+    {
+      "path": "C:/Users/pison/OneDrive/Po\u010d\u00edta\u010d/ocino 50.mov",
+      "uses_camera": false
+    },
+    {
+      "path": "../Downloads/icons8-victory-hand-48.png",
+      "uses_camera": false
+    }
   ]
 }
