@@ -69,12 +69,14 @@ class MappingWindow(QtWidgets.QWidget):
     """
     Window for configuring gesture-to-action mappings.
 
-    Layout:
-    - App table:          one row per SUPPORTED_ACTIONS entry.
-    - Game table:         No GUI Game Engine row (fixed path) + run-game row
-                          (always uses camera; no toggle shown).
-    - File opening table: run-file row with Uses Camera toggle.
-    - Info row:           read-only display of the reserved Open Palm gesture.
+    A navigation bar at the top switches between four pages via a QStackedWidget:
+      - App Actions:      one row per SUPPORTED_ACTIONS entry + dynamic app rows.
+      - Game Actions:     No GUI Game Engine row + run-game row.
+      - File Opening:     run-file row with Uses Camera toggle.
+      - Gesture Reference: read-only display of fixed/reserved gesture assignments.
+
+    Save / Discard / Clear buttons sit in a fixed bar at the bottom of the window,
+    always visible regardless of the active page.
     """
 
     # App table
@@ -106,6 +108,7 @@ class MappingWindow(QtWidgets.QWidget):
         self.setWindowTitle(title)
         self.resize(width, height)
         self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout.setSpacing(4)
 
     def _init_table(self, table: QtWidgets.QTableWidget) -> None:
         """Apply shared column/header settings to a table."""
@@ -119,12 +122,35 @@ class MappingWindow(QtWidgets.QWidget):
         """
         Create all widgets used by the mapping editor.
         """
+        # --- Nav buttons ---
+        self._nav_buttons: list[QtWidgets.QPushButton] = []
+        for label in ("App Actions", "Game Actions", "File Opening", "Gesture Reference"):
+            btn = QtWidgets.QPushButton(label)
+            btn.setFlat(True)
+            self._nav_buttons.append(btn)
+
+        # --- Stacked widget ---
+        self._stack = QtWidgets.QStackedWidget()
+
+        # Page 0 – App Actions
+        self._page_apps = QtWidgets.QWidget()
+        apps_layout = QtWidgets.QVBoxLayout(self._page_apps)
         self.app_table = QtWidgets.QTableWidget(self._APP_TABLE_ROWS, 2)
         self._init_table(self.app_table)
+        self._add_app_btn = QtWidgets.QPushButton("+ Add App")
+        apps_layout.addWidget(self.app_table)
+        apps_layout.addWidget(self._add_app_btn)
 
+        # Page 1 – Game Actions
+        self._page_games = QtWidgets.QWidget()
+        games_layout = QtWidgets.QVBoxLayout(self._page_games)
         self.game_table = QtWidgets.QTableWidget(self._GAME_TABLE_ROWS, 2)
         self._init_table(self.game_table)
+        games_layout.addWidget(self.game_table)
 
+        # Page 2 – File Opening
+        self._page_files = QtWidgets.QWidget()
+        files_layout = QtWidgets.QVBoxLayout(self._page_files)
         self.file_table = QtWidgets.QTableWidget(self._FILE_TABLE_ROWS, 3)
         self.file_table.setHorizontalHeaderLabels(["Action", "Uses Camera", "Gesture"])
         file_header = self.file_table.horizontalHeader()
@@ -133,60 +159,91 @@ class MappingWindow(QtWidgets.QWidget):
         file_header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
         self.file_table.setColumnWidth(0, 280)
         self.file_table.setColumnWidth(1, 100)
+        files_layout.addWidget(self.file_table)
 
+        # Page 3 – Gesture Reference (read-only)
+        self._page_reference = QtWidgets.QWidget()
+        ref_layout = QtWidgets.QVBoxLayout(self._page_reference)
+        ref_layout.addWidget(QtWidgets.QLabel("These gesture assignments are fixed and cannot be changed."))
+        info_table = QtWidgets.QTableWidget(1, 2)
+        info_table.setHorizontalHeaderLabels(["Action", "Gesture"])
+        info_header = info_table.horizontalHeader()
+        info_header.setSectionResizeMode(0, QtWidgets.QHeaderView.Interactive)
+        info_header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+        info_table.setColumnWidth(0, 280)
+        info_table.verticalHeader().hide()
+        info_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        info_table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+        info_table.setFixedHeight(
+            info_table.rowHeight(0) + info_table.horizontalHeader().height() + 4
+        )
+        info_table.setItem(0, 0, QtWidgets.QTableWidgetItem("Deactivate Low Power Mode"))
+        info_table.setItem(0, 1, QtWidgets.QTableWidgetItem("Open_Palm (hold 2 s)"))
+        ref_layout.addWidget(info_table)
+        ref_layout.addStretch()
+
+        for page in (self._page_apps, self._page_games, self._page_files, self._page_reference):
+            self._stack.addWidget(page)
+
+        # --- Shared bottom controls ---
         self.reload_btn = QtWidgets.QPushButton("Discard Changes")
         self.clear_btn = QtWidgets.QPushButton("Clear Selections")
         self.save_btn = QtWidgets.QPushButton("Save")
         self.status = QtWidgets.QLabel("")
-        self._add_app_btn = QtWidgets.QPushButton("+ Add App")
-
         self.button_row = QtWidgets.QHBoxLayout()
 
     def _add_widgets(self) -> None:
         """
-        Insert widgets into the main layout.
+        Insert nav bar, stacked pages, and shared bottom controls into the main layout.
         """
-        self.layout.addWidget(QtWidgets.QLabel("App Actions"))
-        self.layout.addWidget(self.app_table)
-        self.layout.addWidget(self._add_app_btn)
+        # Navigation bar
+        nav_bar = QtWidgets.QHBoxLayout()
+        nav_bar.setSpacing(0)
+        for btn in self._nav_buttons:
+            nav_bar.addWidget(btn)
+        nav_bar.addStretch()
+        self.layout.addLayout(nav_bar)
 
-        self.layout.addWidget(QtWidgets.QLabel("Game Actions"))
-        self.layout.addWidget(self.game_table)
+        # Divider line
+        line = QtWidgets.QFrame()
+        line.setFrameShape(QtWidgets.QFrame.HLine)
+        line.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.layout.addWidget(line)
 
-        self.layout.addWidget(QtWidgets.QLabel("File Opening Actions"))
-        self.layout.addWidget(self.file_table)
+        # Stacked content area
+        self.layout.addWidget(self._stack, stretch=1)
 
-        self.layout.addWidget(QtWidgets.QLabel("Fixed Settings"))
-
-        # Read-only row showing the reserved Open Palm gesture
-        info_table = QtWidgets.QTableWidget(1, 2)
-        info_table.horizontalHeader().hide()
-        info_table.verticalHeader().hide()
-        info_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        info_table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
-        info_table.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.Interactive)
-        info_table.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
-        info_table.setColumnWidth(0, 280)
-        info_table.setFixedHeight(info_table.rowHeight(0) + 4)
-        info_table.setItem(0, 0, QtWidgets.QTableWidgetItem("Deactivate Low Power Mode"))
-        info_table.setItem(0, 1, QtWidgets.QTableWidgetItem("Open_Palm"))
-        self.layout.addWidget(info_table)
-
+        # Bottom controls (always visible)
         self.button_row.addWidget(self.reload_btn)
         self.button_row.addWidget(self.clear_btn)
         self.button_row.addWidget(self.save_btn)
         self.layout.addLayout(self.button_row)
-
         self.layout.addWidget(self.status)
 
     def _connect_signals(self) -> None:
         """
-        Connect button actions to their handlers.
+        Connect button actions and nav bar to their handlers.
         """
         self.reload_btn.clicked.connect(self.load_into_table)
         self.clear_btn.clicked.connect(self.clear_selections)
         self.save_btn.clicked.connect(self.save_from_table)
         self._add_app_btn.clicked.connect(self._open_add_app_dialog)
+        for i, btn in enumerate(self._nav_buttons):
+            btn.clicked.connect(lambda _, idx=i: self._navigate(idx))
+        self._navigate(0)  # start on App Actions
+
+    def _navigate(self, index: int) -> None:
+        """Switch to the page at *index* and mark the active nav button bold."""
+        self._stack.setCurrentIndex(index)
+        # Hide Save/Clear/Discard on the read-only Gesture Reference page
+        reference_page = 3
+        for w in (self.reload_btn, self.clear_btn, self.save_btn):
+            w.setVisible(index != reference_page)
+        for i, btn in enumerate(self._nav_buttons):
+            font = btn.font()
+            font.setBold(i == index)
+            btn.setFont(font)
+            btn.setFlat(i != index)
 
     def _create_gesture_combo(self, current_gesture: str) -> QtWidgets.QComboBox:
         """
