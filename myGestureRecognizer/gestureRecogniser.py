@@ -14,7 +14,7 @@ from .personRecogniser import PersonRecogniser
 WINDOW_NAME = "Hand Detection"
 
 class VideoGestureRecogniser:
-    def __init__(self, controller):
+    def __init__(self, controller, show_camera_view: bool = False):
         """
         Initialize recognizer resources and subscriber list.
         """
@@ -25,6 +25,7 @@ class VideoGestureRecogniser:
         self.subscribers = [controller]
         self.isRunning = True
         self.person_recognizer = PersonRecogniser()
+        self.show_camera_view = bool(show_camera_view)
 
     def stop(self):
         print("Stopping Gesture Recogniser...")
@@ -116,6 +117,8 @@ class VideoGestureRecogniser:
         """
         Display the frame with gesture recognition and handle the stop condition.
         """
+        if not self.show_camera_view:
+            return
         cv2.imshow(WINDOW_NAME, frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             self.isRunning = False

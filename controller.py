@@ -2,7 +2,13 @@ import os
 from time import time
 import AppOpener
 from myGestureRecognizer.gestureRecogniser import VideoGestureRecogniser
-from gui.actions import load_mapping, load_run_uses_camera, is_run_action, get_run_path
+from gui.actions import (
+    load_mapping,
+    load_run_uses_camera,
+    load_camera_view_enabled,
+    is_run_action,
+    get_run_path,
+)
 from powerManager import PowerManager
 from cameraManager import CameraManager
 
@@ -11,7 +17,11 @@ class GestureController:
     Coordinates gesture events, app actions, and power-mode transitions.
     """
     def __init__(self):
-        self.videoGestureRecogniser: VideoGestureRecogniser = VideoGestureRecogniser(self)
+        self.camera_view_enabled = load_camera_view_enabled()
+        self.videoGestureRecogniser: VideoGestureRecogniser = VideoGestureRecogniser(
+            self,
+            show_camera_view=self.camera_view_enabled,
+        )
         self.powerManager = PowerManager(self.videoGestureRecogniser)
         # power manager is added afterwards as a subscriber since it needs videoGestureRecogniser as an argument
         self.videoGestureRecogniser.add_subscriber(self.powerManager)
@@ -31,7 +41,10 @@ class GestureController:
         """
         Create a fresh recognizer instance and rewire subscribers.
         """
-        self.videoGestureRecogniser = VideoGestureRecogniser(self)
+        self.videoGestureRecogniser = VideoGestureRecogniser(
+            self,
+            show_camera_view=self.camera_view_enabled,
+        )
         self.powerManager = PowerManager(self.videoGestureRecogniser)
         self.videoGestureRecogniser.add_subscriber(self.powerManager)
         self.prevUpdate = None

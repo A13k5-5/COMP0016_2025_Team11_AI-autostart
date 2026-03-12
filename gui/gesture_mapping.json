@@ -3,8 +3,8 @@
   "Closed_Fist": "",
   "Victory": "run:C:/Users/pison/OneDrive/Po\u010d\u00edta\u010d/ocino 50.mov",
   "ILoveYou": "stop",
-  "Thumb_Up": "open:calculator",
-  "Thumb_Down": "close:calculator",
+  "Thumb_Up": "open:notepad",
+  "Thumb_Down": "close:notepad",
   "dynamic_apps": [
     "calculator"
   ],
@@ -18,5 +18,6 @@
       "path": "../Downloads/icons8-victory-hand-48.png",
       "uses_camera": false
     }
-  ]
+  ],
+  "camera_view_enabled": true
 }

@@ -12,6 +12,8 @@ from gui.actions import (
     load_app_data,
     update_app_data,
     load_dynamic_apps,
+    load_camera_view_enabled,
+    save_camera_view_enabled,
     save_mapping,
     is_run_action,
     make_run_action,
@@ -154,7 +156,25 @@ class MappingWindow(QtWidgets.QWidget):
         """Build and return the Gesture Reference page."""
         page = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(page)
-        layout.addWidget(QtWidgets.QLabel("These gesture assignments are fixed and cannot be changed."))
+        layout.setSpacing(10)
+
+        display_title = QtWidgets.QLabel("Display Settings")
+        font = display_title.font()
+        font.setBold(True)
+        display_title.setFont(font)
+        layout.addWidget(display_title)
+        self._camera_view_toggle = QtWidgets.QCheckBox("Show Camera View")
+        self._camera_view_toggle.setChecked(False)
+        layout.addWidget(self._camera_view_toggle)
+
+        section_line_1 = QtWidgets.QFrame()
+        section_line_1.setFrameShape(QtWidgets.QFrame.HLine)
+        section_line_1.setFrameShadow(QtWidgets.QFrame.Sunken)
+        layout.addWidget(section_line_1)
+
+        fixed_title = QtWidgets.QLabel("Fixed Assignments")
+        fixed_title.setFont(font)
+        layout.addWidget(fixed_title)
 
         # Fixed assignments table
         info_table = QtWidgets.QTableWidget(1, 2)
@@ -172,6 +192,15 @@ class MappingWindow(QtWidgets.QWidget):
         info_table.setItem(0, 0, QtWidgets.QTableWidgetItem("Deactivate Low Power Mode"))
         info_table.setItem(0, 1, QtWidgets.QTableWidgetItem("Open_Palm (hold 2 s)"))
         layout.addWidget(info_table)
+
+        section_line_2 = QtWidgets.QFrame()
+        section_line_2.setFrameShape(QtWidgets.QFrame.HLine)
+        section_line_2.setFrameShadow(QtWidgets.QFrame.Sunken)
+        layout.addWidget(section_line_2)
+
+        guide_title = QtWidgets.QLabel("Gesture Guide")
+        guide_title.setFont(font)
+        layout.addWidget(guide_title)
 
         # Gesture icon grid
         layout.addWidget(QtWidgets.QLabel("Available gestures:"))
@@ -255,6 +284,7 @@ class MappingWindow(QtWidgets.QWidget):
         self.save_btn.clicked.connect(self.save_from_table)
         self._add_app_btn.clicked.connect(self._open_add_app_dialog)
         self._update_app_list_btn.clicked.connect(self._refresh_app_list)
+        self._camera_view_toggle.toggled.connect(self._save_camera_view_setting)
         self._add_game_btn.clicked.connect(lambda: self._add_game_row())
         self._add_file_btn.clicked.connect(lambda: self._add_file_row())
         for i, btn in enumerate(self._nav_buttons):
@@ -268,6 +298,13 @@ class MappingWindow(QtWidgets.QWidget):
             self.status.setText("App list updated.")
         except Exception as exc:
             self.status.setText(f"Failed to update app list: {exc}")
+
+    def _save_camera_view_setting(self, enabled: bool) -> None:
+        """Persist the camera-view toggle immediately from Gesture Reference page."""
+        try:
+            save_camera_view_enabled(enabled)
+        except Exception as exc:
+            self.status.setText(f"Failed to save camera view setting: {exc}")
 
     def _navigate(self, index: int) -> None:
         """Switch to the page at *index* and mark the active nav button bold."""
@@ -505,6 +542,10 @@ class MappingWindow(QtWidgets.QWidget):
             file_action = make_run_action(entry["path"])
             self._add_file_row(entry["path"], action_to_gesture.get(file_action, ""), entry["uses_camera"])
 
+        self._camera_view_toggle.blockSignals(True)
+        self._camera_view_toggle.setChecked(load_camera_view_enabled())
+        self._camera_view_toggle.blockSignals(False)
+
         self._refresh_gesture_options()
         self.status.setText("Previous selections loaded from file.")
 
@@ -620,5 +661,6 @@ class MappingWindow(QtWidgets.QWidget):
             game_run_paths=game_run_paths,
             file_run_entries=file_run_entries,
             dynamic_apps=dynamic_apps,
+            camera_view_enabled=self._camera_view_toggle.isChecked(),
         )
         self.status.setText("Saved to file.")
