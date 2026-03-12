@@ -19,33 +19,16 @@ from gui.actions import (
 
 from gui.AppDialog import AppDialog
 
-_GESTURE_ICONS: list[tuple[str, str]] = [
-    ("Pointing_Up",  "icons8-index-pointing-up-48.png"),
-    ("Closed_Fist",  "icons8-raised-fist-48.png"),
-    ("Victory",       "icons8-victory-hand-48.png"),
-    ("ILoveYou",     "icons8-love-you-gesture-48.png"),
-    ("Thumb_Up",     "icons8-thumbs-up-48.png"),
-    ("Thumb_Down",   "icons8-thumbs-down-48.png"),
-    ("Open_Palm",    "icons8-raised-hand-48.png"),
+# (gesture_key, icon_filename, display_name, icons8_attribution_url)
+_GESTURE_ICONS: list[tuple[str, str, str, str]] = [
+    ("Pointing_Up", "icons8-index-pointing-up-48.png", "Pointing Up", "icons8.com/icon/A8CsBXRU88Wm/index-pointing-up"),
+    ("Closed_Fist", "icons8-raised-fist-48.png",       "Closed Fist", "icons8.com/icon/VkJPr-zo0ySl/raised-fist"),
+    ("Victory",     "icons8-victory-hand-48.png",      "Victory",     "icons8.com/icon/T4rG9LrLu-OM/victory-hand"),
+    ("ILoveYou",   "icons8-love-you-gesture-48.png",  "I Love You",  "icons8.com/icon/TLeK5N44Q2jW/love-you-gesture"),
+    ("Thumb_Up",   "icons8-thumbs-up-48.png",         "Thumb Up",    "icons8.com/icon/FYJ9HNSqf_uK/thumbs-up"),
+    ("Thumb_Down", "icons8-thumbs-down-48.png",       "Thumb Down",  "icons8.com/icon/cPJTvqEzTYvb/thumbs-down"),
+    ("Open_Palm",  "icons8-raised-hand-48.png",       "Open Palm",   "icons8.com/icon/ykfYYMYPhA8j/raised-hand"),
 ]
-_ICON_ATTRIBUTION: dict[str, str] = {
-    "Pointing_Up": "icons8.com/icon/A8CsBXRU88Wm/index-pointing-up",
-    "Closed_Fist": "icons8.com/icon/VkJPr-zo0ySl/raised-fist",
-    "Victory":     "icons8.com/icon/T4rG9LrLu-OM/victory-hand",
-    "ILoveYou":    "icons8.com/icon/TLeK5N44Q2jW/love-you-gesture",
-    "Thumb_Up":    "icons8.com/icon/FYJ9HNSqf_uK/thumbs-up",
-    "Thumb_Down":  "icons8.com/icon/cPJTvqEzTYvb/thumbs-down",
-    "Open_Palm":   "icons8.com/icon/ykfYYMYPhA8j/raised-hand",
-}
-_DISPLAY_NAMES: dict[str, str] = {
-    "Pointing_Up": "Pointing Up",
-    "Closed_Fist": "Closed Fist",
-    "Victory":     "Victory",
-    "ILoveYou":    "I Love You",
-    "Thumb_Up":    "Thumb Up",
-    "Thumb_Down":  "Thumb Down",
-    "Open_Palm":   "Open Palm",
-}
 
 
 class MappingWindow(QtWidgets.QWidget):
@@ -198,7 +181,7 @@ class MappingWindow(QtWidgets.QWidget):
         grid.setContentsMargins(8, 8, 8, 8)
 
         COLS = 4
-        for idx, (gesture, icon_file) in enumerate(_GESTURE_ICONS):
+        for idx, (gesture, icon_file, display_name, attribution) in enumerate(_GESTURE_ICONS):
             cell = QtWidgets.QWidget()
             cell_layout = QtWidgets.QVBoxLayout(cell)
             cell_layout.setAlignment(QtCore.Qt.AlignCenter)
@@ -206,7 +189,7 @@ class MappingWindow(QtWidgets.QWidget):
 
             icon_label = QtWidgets.QLabel()
             icon_label.setAlignment(QtCore.Qt.AlignCenter)
-            icon_label.setToolTip(f"Icon by Icons8 — {_ICON_ATTRIBUTION[gesture]}")
+            icon_label.setToolTip(f"Icon by Icons8 — {attribution}")
             icon_path = os.path.join(_ICONS_DIR, icon_file)
             pixmap = QtGui.QPixmap(icon_path)
             if not pixmap.isNull():
@@ -218,7 +201,7 @@ class MappingWindow(QtWidgets.QWidget):
             else:
                 icon_label.setText("[?]")
 
-            name_label = QtWidgets.QLabel(_DISPLAY_NAMES.get(gesture, gesture))
+            name_label = QtWidgets.QLabel(display_name)
             name_label.setAlignment(QtCore.Qt.AlignCenter)
 
             cell_layout.addWidget(icon_label)
