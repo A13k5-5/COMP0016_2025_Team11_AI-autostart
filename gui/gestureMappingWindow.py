@@ -56,7 +56,7 @@ class MappingWindow(QtWidgets.QWidget):
 
     def __init__(self):
         super().__init__()
-        self._setup_window("Customize the mapping between gestures and actions.", 620, 520)
+        self._setup_window("AI-Autostart settings", 620, 520)
         self._create_widgets()
         self._add_widgets()
         self._connect_signals()
