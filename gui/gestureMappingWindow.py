@@ -311,9 +311,9 @@ class MappingWindow(QtWidgets.QWidget):
     def _navigate(self, index: int) -> None:
         """Switch to the page at *index* and mark the active nav button bold."""
         self._stack.setCurrentIndex(index)
-        # Hide Save/Clear/Discard on the read-only Gesture Reference page
+        # Hide Save/Clear/Discard/status on the read-only Gesture Reference page
         reference_page = 3
-        for w in (self.reload_btn, self.clear_btn, self.save_btn):
+        for w in (self.reload_btn, self.clear_btn, self.save_btn, self.status):
             w.setVisible(index != reference_page)
         for i, btn in enumerate(self._nav_buttons):
             font = btn.font()
