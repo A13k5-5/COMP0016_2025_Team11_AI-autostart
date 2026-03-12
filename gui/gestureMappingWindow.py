@@ -17,54 +17,36 @@ from gui.actions import (
     get_run_path,
 )
 
+from gui.AppDialog import AppDialog
 
-class AddAppDialog(QtWidgets.QDialog):
-    """
-    Modal popup that lets the user pick an app from app_data.json.
-    Returns the selected app name (lowercase key) via selected_app().
-    """
+_GESTURE_ICONS: list[tuple[str, str]] = [
+    ("Pointing_Up",  "icons8-index-pointing-up-48.png"),
+    ("Closed_Fist",  "icons8-raised-fist-48.png"),
+    ("Victory",       "icons8-victory-hand-48.png"),
+    ("ILoveYou",     "icons8-love-you-gesture-48.png"),
+    ("Thumb_Up",     "icons8-thumbs-up-48.png"),
+    ("Thumb_Down",   "icons8-thumbs-down-48.png"),
+    ("Open_Palm",    "icons8-raised-hand-48.png"),
+]
+_ICON_ATTRIBUTION: dict[str, str] = {
+    "Pointing_Up": "icons8.com/icon/A8CsBXRU88Wm/index-pointing-up",
+    "Closed_Fist": "icons8.com/icon/VkJPr-zo0ySl/raised-fist",
+    "Victory":     "icons8.com/icon/T4rG9LrLu-OM/victory-hand",
+    "ILoveYou":    "icons8.com/icon/TLeK5N44Q2jW/love-you-gesture",
+    "Thumb_Up":    "icons8.com/icon/FYJ9HNSqf_uK/thumbs-up",
+    "Thumb_Down":  "icons8.com/icon/cPJTvqEzTYvb/thumbs-down",
+    "Open_Palm":   "icons8.com/icon/ykfYYMYPhA8j/raised-hand",
+}
+_DISPLAY_NAMES: dict[str, str] = {
+    "Pointing_Up": "Pointing Up",
+    "Closed_Fist": "Closed Fist",
+    "Victory":     "Victory",
+    "ILoveYou":    "I Love You",
+    "Thumb_Up":    "Thumb Up",
+    "Thumb_Down":  "Thumb Down",
+    "Open_Palm":   "Open Palm",
+}
 
-    def __init__(self, app_names: list, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Add App")
-        self.resize(380, 480)
-
-        layout = QtWidgets.QVBoxLayout(self)
-
-        self._search = QtWidgets.QLineEdit()
-        self._search.setPlaceholderText("Search apps…")
-        layout.addWidget(self._search)
-
-        self._list = QtWidgets.QListWidget()
-        self._all_names = sorted(app_names)
-        self._list.addItems(self._all_names)
-        layout.addWidget(self._list)
-
-        btn_row = QtWidgets.QHBoxLayout()
-        self._add_btn = QtWidgets.QPushButton("Add")
-        self._add_btn.setEnabled(False)
-        cancel_btn = QtWidgets.QPushButton("Cancel")
-        btn_row.addWidget(self._add_btn)
-        btn_row.addWidget(cancel_btn)
-        layout.addLayout(btn_row)
-
-        self._search.textChanged.connect(self._filter)
-        self._list.itemSelectionChanged.connect(self._on_selection_changed)
-        self._list.itemDoubleClicked.connect(lambda _: self.accept())
-        self._add_btn.clicked.connect(self.accept)
-        cancel_btn.clicked.connect(self.reject)
-
-    def _filter(self, text: str) -> None:
-        for i in range(self._list.count()):
-            item = self._list.item(i)
-            item.setHidden(text.lower() not in item.text().lower())
-
-    def _on_selection_changed(self) -> None:
-        self._add_btn.setEnabled(bool(self._list.selectedItems()))
-
-    def selected_app(self) -> str:
-        items = self._list.selectedItems()
-        return items[0].text() if items else ""
 
 class MappingWindow(QtWidgets.QWidget):
     """
@@ -115,9 +97,7 @@ class MappingWindow(QtWidgets.QWidget):
         table.setColumnWidth(0, 280)
 
     def _create_widgets(self) -> None:
-        """
-        Create all widgets used by the mapping editor.
-        """
+        """Create all widgets used by the mapping editor."""
         # --- Nav buttons ---
         self._nav_buttons: list[QtWidgets.QPushButton] = []
         for label in ("App Actions", "Game Actions", "File Opening", "Gesture Reference"):
@@ -127,28 +107,47 @@ class MappingWindow(QtWidgets.QWidget):
 
         # --- Stacked widget ---
         self._stack = QtWidgets.QStackedWidget()
+        for page in (
+            self._build_apps_page(),
+            self._build_games_page(),
+            self._build_files_page(),
+            self._build_reference_page(),
+        ):
+            self._stack.addWidget(page)
 
-        # Page 0 – App Actions
-        self._page_apps = QtWidgets.QWidget()
-        apps_layout = QtWidgets.QVBoxLayout(self._page_apps)
+        # --- Shared bottom controls ---
+        self.reload_btn = QtWidgets.QPushButton("Discard Changes")
+        self.clear_btn = QtWidgets.QPushButton("Clear Selections")
+        self.save_btn = QtWidgets.QPushButton("Save")
+        self.status = QtWidgets.QLabel("")
+        self.button_row = QtWidgets.QHBoxLayout()
+
+    def _build_apps_page(self) -> QtWidgets.QWidget:
+        """Build and return the App Actions page."""
+        page = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(page)
         self.app_table = QtWidgets.QTableWidget(self._APP_TABLE_ROWS, 2)
         self._init_table(self.app_table)
         self._add_app_btn = QtWidgets.QPushButton("+ Add App")
-        apps_layout.addWidget(self.app_table)
-        apps_layout.addWidget(self._add_app_btn)
+        layout.addWidget(self.app_table)
+        layout.addWidget(self._add_app_btn)
+        return page
 
-        # Page 1 – Game Actions
-        self._page_games = QtWidgets.QWidget()
-        games_layout = QtWidgets.QVBoxLayout(self._page_games)
+    def _build_games_page(self) -> QtWidgets.QWidget:
+        """Build and return the Game Actions page."""
+        page = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(page)
         self.game_table = QtWidgets.QTableWidget(1, 2)  # starts with only the engine row
         self._init_table(self.game_table)
         self._add_game_btn = QtWidgets.QPushButton("+ Add Game")
-        games_layout.addWidget(self.game_table)
-        games_layout.addWidget(self._add_game_btn)
+        layout.addWidget(self.game_table)
+        layout.addWidget(self._add_game_btn)
+        return page
 
-        # Page 2 – File Opening
-        self._page_files = QtWidgets.QWidget()
-        files_layout = QtWidgets.QVBoxLayout(self._page_files)
+    def _build_files_page(self) -> QtWidgets.QWidget:
+        """Build and return the File Opening page."""
+        page = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(page)
         self.file_table = QtWidgets.QTableWidget(0, 3)  # starts empty; all rows are dynamic
         self.file_table.setHorizontalHeaderLabels(["Action", "Uses Camera", "Gesture"])
         file_header = self.file_table.horizontalHeader()
@@ -158,16 +157,17 @@ class MappingWindow(QtWidgets.QWidget):
         self.file_table.setColumnWidth(0, 280)
         self.file_table.setColumnWidth(1, 100)
         self._add_file_btn = QtWidgets.QPushButton("+ Add File")
-        files_layout.addWidget(self.file_table)
-        files_layout.addWidget(self._add_file_btn)
+        layout.addWidget(self.file_table)
+        layout.addWidget(self._add_file_btn)
+        return page
 
-        # Page 3 – Gesture Reference (read-only)
-        self._page_reference = QtWidgets.QWidget()
-        ref_layout = QtWidgets.QVBoxLayout(self._page_reference)
+    def _build_reference_page(self) -> QtWidgets.QWidget:
+        """Build and return the Gesture Reference page."""
+        page = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(page)
+        layout.addWidget(QtWidgets.QLabel("These gesture assignments are fixed and cannot be changed."))
 
-        ref_layout.addWidget(QtWidgets.QLabel("These gesture assignments are fixed and cannot be changed."))
-
-        # Fixed assignments table (Open Palm → LPM)
+        # Fixed assignments table
         info_table = QtWidgets.QTableWidget(1, 2)
         info_table.setHorizontalHeaderLabels(["Action", "Gesture"])
         info_header = info_table.horizontalHeader()
@@ -182,40 +182,12 @@ class MappingWindow(QtWidgets.QWidget):
         )
         info_table.setItem(0, 0, QtWidgets.QTableWidgetItem("Deactivate Low Power Mode"))
         info_table.setItem(0, 1, QtWidgets.QTableWidgetItem("Open_Palm (hold 2 s)"))
-        ref_layout.addWidget(info_table)
+        layout.addWidget(info_table)
 
         # Gesture icon grid
-        ref_layout.addWidget(QtWidgets.QLabel("Available gestures:"))
+        layout.addWidget(QtWidgets.QLabel("Available gestures:"))
 
         _ICONS_DIR = os.path.join(os.path.dirname(__file__), "icons")
-        _GESTURE_ICONS: list[tuple[str, str]] = [
-            ("Pointing_Up",  "icons8-index-pointing-up-48.png"),
-            ("Closed_Fist",  "icons8-raised-fist-48.png"),
-            ("Victory",       "icons8-victory-hand-48.png"),
-            ("ILoveYou",     "icons8-love-you-gesture-48.png"),
-            ("Thumb_Up",     "icons8-thumbs-up-48.png"),
-            ("Thumb_Down",   "icons8-thumbs-down-48.png"),
-            ("Open_Palm",    "icons8-raised-hand-48.png"),
-        ]
-        _ICON_ATTRIBUTION = {
-            "Pointing_Up": "icons8.com/icon/A8CsBXRU88Wm/index-pointing-up",
-            "Closed_Fist": "icons8.com/icon/VkJPr-zo0ySl/raised-fist",
-            "Victory":     "icons8.com/icon/T4rG9LrLu-OM/victory-hand",
-            "ILoveYou":    "icons8.com/icon/TLeK5N44Q2jW/love-you-gesture",
-            "Thumb_Up":    "icons8.com/icon/FYJ9HNSqf_uK/thumbs-up",
-            "Thumb_Down":  "icons8.com/icon/cPJTvqEzTYvb/thumbs-down",
-            "Open_Palm":   "icons8.com/icon/ykfYYMYPhA8j/raised-hand",
-        }
-        _DISPLAY_NAMES = {
-            "Pointing_Up": "Pointing Up",
-            "Closed_Fist": "Closed Fist",
-            "Victory":     "Victory",
-            "ILoveYou":    "I Love You",
-            "Thumb_Up":    "Thumb Up",
-            "Thumb_Down":  "Thumb Down",
-            "Open_Palm":   "Open Palm",
-        }
-
         scroll = QtWidgets.QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QtWidgets.QFrame.NoFrame)
@@ -254,17 +226,8 @@ class MappingWindow(QtWidgets.QWidget):
             grid.addWidget(cell, idx // COLS, idx % COLS)
 
         scroll.setWidget(grid_widget)
-        ref_layout.addWidget(scroll, stretch=1)
-
-        for page in (self._page_apps, self._page_games, self._page_files, self._page_reference):
-            self._stack.addWidget(page)
-
-        # --- Shared bottom controls ---
-        self.reload_btn = QtWidgets.QPushButton("Discard Changes")
-        self.clear_btn = QtWidgets.QPushButton("Clear Selections")
-        self.save_btn = QtWidgets.QPushButton("Save")
-        self.status = QtWidgets.QLabel("")
-        self.button_row = QtWidgets.QHBoxLayout()
+        layout.addWidget(scroll, stretch=1)
+        return page
 
     def _add_widgets(self) -> None:
         """
@@ -376,7 +339,7 @@ class MappingWindow(QtWidgets.QWidget):
     def _open_add_app_dialog(self) -> None:
         """Show the app picker popup and add the chosen app's rows."""
         app_names = list(load_app_data().keys())
-        dlg = AddAppDialog(app_names, parent=self)
+        dlg = AppDialog(app_names, parent=self)
         if dlg.exec() == QtWidgets.QDialog.Accepted:
             app_name = dlg.selected_app()
             if app_name:
