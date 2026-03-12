@@ -197,6 +197,15 @@ class MappingWindow(QtWidgets.QWidget):
             ("Thumb_Down",   "icons8-thumbs-down-48.png"),
             ("Open_Palm",    "icons8-raised-hand-48.png"),
         ]
+        _ICON_ATTRIBUTION = {
+            "Pointing_Up": "icons8.com/icon/A8CsBXRU88Wm/index-pointing-up",
+            "Closed_Fist": "icons8.com/icon/VkJPr-zo0ySl/raised-fist",
+            "Victory":     "icons8.com/icon/T4rG9LrLu-OM/victory-hand",
+            "ILoveYou":    "icons8.com/icon/TLeK5N44Q2jW/love-you-gesture",
+            "Thumb_Up":    "icons8.com/icon/FYJ9HNSqf_uK/thumbs-up",
+            "Thumb_Down":  "icons8.com/icon/cPJTvqEzTYvb/thumbs-down",
+            "Open_Palm":   "icons8.com/icon/ykfYYMYPhA8j/raised-hand",
+        }
         _DISPLAY_NAMES = {
             "Pointing_Up": "Pointing Up",
             "Closed_Fist": "Closed Fist",
@@ -225,6 +234,7 @@ class MappingWindow(QtWidgets.QWidget):
 
             icon_label = QtWidgets.QLabel()
             icon_label.setAlignment(QtCore.Qt.AlignCenter)
+            icon_label.setToolTip(f"Icon by Icons8 — {_ICON_ATTRIBUTION[gesture]}")
             icon_path = os.path.join(_ICONS_DIR, icon_file)
             pixmap = QtGui.QPixmap(icon_path)
             if not pixmap.isNull():
