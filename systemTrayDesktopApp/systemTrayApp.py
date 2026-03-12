@@ -4,6 +4,8 @@ import sys
 import os
 import subprocess
 
+from gui.actions import update_app_data
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
 
@@ -25,6 +27,10 @@ def main() -> None:
     """
     Start the system tray icon application.
     """
+    try:
+        update_app_data()
+    except Exception as exc:
+        print(f"Warning: failed to refresh app list: {exc}")
     
     image = Image.open(os.path.join(BASE_DIR, "icon.png"))
 
