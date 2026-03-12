@@ -1,6 +1,6 @@
 import os
 
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtGui, QtCore
 
 from gui.actions import (
     SUPPORTED_GESTURES,
@@ -164,7 +164,10 @@ class MappingWindow(QtWidgets.QWidget):
         # Page 3 – Gesture Reference (read-only)
         self._page_reference = QtWidgets.QWidget()
         ref_layout = QtWidgets.QVBoxLayout(self._page_reference)
+
         ref_layout.addWidget(QtWidgets.QLabel("These gesture assignments are fixed and cannot be changed."))
+
+        # Fixed assignments table (Open Palm → LPM)
         info_table = QtWidgets.QTableWidget(1, 2)
         info_table.setHorizontalHeaderLabels(["Action", "Gesture"])
         info_header = info_table.horizontalHeader()
@@ -180,7 +183,68 @@ class MappingWindow(QtWidgets.QWidget):
         info_table.setItem(0, 0, QtWidgets.QTableWidgetItem("Deactivate Low Power Mode"))
         info_table.setItem(0, 1, QtWidgets.QTableWidgetItem("Open_Palm (hold 2 s)"))
         ref_layout.addWidget(info_table)
-        ref_layout.addStretch()
+
+        # Gesture icon grid
+        ref_layout.addWidget(QtWidgets.QLabel("Available gestures:"))
+
+        _ICONS_DIR = os.path.join(os.path.dirname(__file__), "icons")
+        _GESTURE_ICONS: list[tuple[str, str]] = [
+            ("Pointing_Up",  "icons8-index-pointing-up-48.png"),
+            ("Closed_Fist",  "icons8-raised-fist-48.png"),
+            ("Victory",       "icons8-victory-hand-48.png"),
+            ("ILoveYou",     "icons8-love-you-gesture-48.png"),
+            ("Thumb_Up",     "icons8-thumbs-up-48.png"),
+            ("Thumb_Down",   "icons8-thumbs-down-48.png"),
+            ("Open_Palm",    "icons8-raised-hand-48.png"),
+        ]
+        _DISPLAY_NAMES = {
+            "Pointing_Up": "Pointing Up",
+            "Closed_Fist": "Closed Fist",
+            "Victory":     "Victory",
+            "ILoveYou":    "I Love You",
+            "Thumb_Up":    "Thumb Up",
+            "Thumb_Down":  "Thumb Down",
+            "Open_Palm":   "Open Palm",
+        }
+
+        scroll = QtWidgets.QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QtWidgets.QFrame.NoFrame)
+
+        grid_widget = QtWidgets.QWidget()
+        grid = QtWidgets.QGridLayout(grid_widget)
+        grid.setSpacing(16)
+        grid.setContentsMargins(8, 8, 8, 8)
+
+        COLS = 4
+        for idx, (gesture, icon_file) in enumerate(_GESTURE_ICONS):
+            cell = QtWidgets.QWidget()
+            cell_layout = QtWidgets.QVBoxLayout(cell)
+            cell_layout.setAlignment(QtCore.Qt.AlignCenter)
+            cell_layout.setSpacing(4)
+
+            icon_label = QtWidgets.QLabel()
+            icon_label.setAlignment(QtCore.Qt.AlignCenter)
+            icon_path = os.path.join(_ICONS_DIR, icon_file)
+            pixmap = QtGui.QPixmap(icon_path)
+            if not pixmap.isNull():
+                icon_label.setPixmap(pixmap.scaled(
+                    64, 64,
+                    QtCore.Qt.KeepAspectRatio,
+                    QtCore.Qt.SmoothTransformation,
+                ))
+            else:
+                icon_label.setText("[?]")
+
+            name_label = QtWidgets.QLabel(_DISPLAY_NAMES.get(gesture, gesture))
+            name_label.setAlignment(QtCore.Qt.AlignCenter)
+
+            cell_layout.addWidget(icon_label)
+            cell_layout.addWidget(name_label)
+            grid.addWidget(cell, idx // COLS, idx % COLS)
+
+        scroll.setWidget(grid_widget)
+        ref_layout.addWidget(scroll, stretch=1)
 
         for page in (self._page_apps, self._page_games, self._page_files, self._page_reference):
             self._stack.addWidget(page)
