@@ -10,6 +10,7 @@ from gui.actions import (
     load_game_run_paths,
     load_file_run_entries,
     load_app_data,
+    update_app_data,
     load_dynamic_apps,
     save_mapping,
     is_run_action,
@@ -112,8 +113,13 @@ class MappingWindow(QtWidgets.QWidget):
         self.app_table = QtWidgets.QTableWidget(self._APP_TABLE_ROWS, 2)
         self._init_table(self.app_table)
         self._add_app_btn = QtWidgets.QPushButton("+ Add App")
+        self._update_app_list_btn = QtWidgets.QPushButton("Update App List")
+        button_row = QtWidgets.QHBoxLayout()
+        button_row.addWidget(self._add_app_btn)
+        button_row.addWidget(self._update_app_list_btn)
+        button_row.addStretch()
         layout.addWidget(self.app_table)
-        layout.addWidget(self._add_app_btn)
+        layout.addLayout(button_row)
         return page
 
     def _build_games_page(self) -> QtWidgets.QWidget:
@@ -248,11 +254,20 @@ class MappingWindow(QtWidgets.QWidget):
         self.clear_btn.clicked.connect(self.clear_selections)
         self.save_btn.clicked.connect(self.save_from_table)
         self._add_app_btn.clicked.connect(self._open_add_app_dialog)
+        self._update_app_list_btn.clicked.connect(self._refresh_app_list)
         self._add_game_btn.clicked.connect(lambda: self._add_game_row())
         self._add_file_btn.clicked.connect(lambda: self._add_file_row())
         for i, btn in enumerate(self._nav_buttons):
             btn.clicked.connect(lambda _, idx=i: self._navigate(idx))
         self._navigate(0)  # start on App Actions
+
+    def _refresh_app_list(self) -> None:
+        """Regenerate app_data.json from currently installed apps."""
+        try:
+            update_app_data()
+            self.status.setText("App list updated.")
+        except Exception as exc:
+            self.status.setText(f"Failed to update app list: {exc}")
 
     def _navigate(self, index: int) -> None:
         """Switch to the page at *index* and mark the active nav button bold."""

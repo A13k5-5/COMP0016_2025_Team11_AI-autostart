@@ -1,5 +1,6 @@
 import json
 import os
+import importlib
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 MAPPING_PATH = os.path.join(BASE_DIR, "gui", "gesture_mapping.json")
@@ -60,6 +61,34 @@ def load_app_data(path: str = APP_DATA_PATH) -> dict:
     """
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def update_app_data() -> None:
+    """
+    Regenerate app_data.json for the current machine using AppOpener.
+
+    AppOpener versions differ:
+    - Newer versions may expose `create_app_data()` directly.
+    - Older versions expose `mklist()` which writes a file named `app_data`
+      (without the .json extension).
+
+    This function handles both cases and always leaves this project with a
+    refreshed `app_data.json` at APP_DATA_PATH.
+    """
+    app_opener = importlib.import_module("AppOpener")
+    create_app_data_fn = getattr(app_opener, "create_app_data", None)
+    if callable(create_app_data_fn):
+        create_app_data_fn()
+        return
+
+    mklist_fn = getattr(app_opener, "mklist", None)
+    if not callable(mklist_fn):
+        raise RuntimeError("AppOpener does not expose create_app_data or mklist")
+
+    mklist_fn(name="app_data", path=BASE_DIR, output=False)
+    generated_path = os.path.join(BASE_DIR, "app_data")
+    if os.path.exists(generated_path):
+        os.replace(generated_path, APP_DATA_PATH)
 
 def load_dynamic_apps(path: str = MAPPING_PATH) -> list:
     """
