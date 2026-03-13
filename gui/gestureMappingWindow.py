@@ -56,6 +56,9 @@ class MappingWindow(QtWidgets.QWidget):
     # File table: all rows are dynamic
 
     _NO_GUI_GAME_ENGINE_RELATIVE_PATH = "gameEngine/gameEngine.exec"
+    _ACTION_DISPLAY_NAMES = {
+        "stop": "Stop Gesture Recognizer",
+    }
 
     def __init__(self):
         super().__init__()
@@ -359,11 +362,18 @@ class MappingWindow(QtWidgets.QWidget):
         combo.setCurrentIndex(idx if idx >= 0 else 0)
         return combo
 
-    def _set_action_cell(self, table: QtWidgets.QTableWidget, row: int, action: str) -> None:
+    def _set_action_cell(
+        self,
+        table: QtWidgets.QTableWidget,
+        row: int,
+        action: str,
+        display_text: str | None = None,
+    ) -> None:
         """
         Set the action text in the left column (read-only).
         """
-        action_item = QtWidgets.QTableWidgetItem(action)
+        action_item = QtWidgets.QTableWidgetItem(display_text if display_text is not None else action)
+        action_item.setData(QtCore.Qt.UserRole, action)
         action_item.setFlags(action_item.flags() & ~QtWidgets.QTableWidgetItem().flags().ItemIsEditable)
         table.setItem(row, 0, action_item)
 
@@ -532,12 +542,27 @@ class MappingWindow(QtWidgets.QWidget):
 
         # App table
         for row, action in enumerate(SUPPORTED_ACTIONS):
-            self._set_action_cell(self.app_table, row, action)
+            self._set_action_cell(
+                self.app_table,
+                row,
+                action,
+                display_text=self._ACTION_DISPLAY_NAMES.get(action),
+            )
             self._set_gesture_cell(self.app_table, row, action_to_gesture.get(action, ""))
 
-        # Dynamic app rows — restore from saved list
+        # Dynamic app rows — restore from saved list and include legacy mapped open/close apps
         self._clear_dynamic_app_rows()
-        for app_name in load_dynamic_apps():
+        dynamic_app_names = list(load_dynamic_apps())
+        mapped_open_close_apps = {
+            action.split(":", 1)[1].strip()
+            for action in action_to_gesture
+            if action.startswith("open:") or action.startswith("close:")
+        }
+        for app_name in sorted(mapped_open_close_apps):
+            if app_name and app_name not in dynamic_app_names:
+                dynamic_app_names.append(app_name)
+
+        for app_name in dynamic_app_names:
             open_action = f"open:{app_name}"
             close_action = f"close:{app_name}"
             self._add_app_row(
@@ -606,7 +631,8 @@ class MappingWindow(QtWidgets.QWidget):
         # App table (static + dynamic rows)
         for row in range(self.app_table.rowCount()):
             action_item = self.app_table.item(row, 0)
-            action = action_item.text().strip() if action_item else ""
+            action = action_item.data(QtCore.Qt.UserRole) if action_item else ""
+            action = str(action).strip() if action else ""
             combo = self.app_table.cellWidget(row, 1)
             gesture = combo.currentText().strip() if combo else ""
             if action and gesture and gesture != "None":
@@ -663,7 +689,8 @@ class MappingWindow(QtWidgets.QWidget):
         for row in range(self._APP_TABLE_ROWS, self.app_table.rowCount()):
             action_item = self.app_table.item(row, 0)
             if action_item:
-                action = action_item.text().strip()
+                action = action_item.data(QtCore.Qt.UserRole)
+                action = str(action).strip() if action else ""
                 for prefix in ("open:", "close:"):
                     if action.startswith(prefix):
                         name = action[len(prefix):]

@@ -7,8 +7,6 @@ MAPPING_PATH = os.path.join(BASE_DIR, "gui", "gesture_mapping.json")
 APP_DATA_PATH = os.path.join(BASE_DIR, "app_data.json")
 
 SUPPORTED_ACTIONS = [
-    "open:notepad",
-    "close:notepad",
     "stop",
 ]
 
