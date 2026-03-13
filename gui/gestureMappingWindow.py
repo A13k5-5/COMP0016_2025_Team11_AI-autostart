@@ -116,9 +116,11 @@ class MappingWindow(QtWidgets.QWidget):
         self._init_table(self.app_table)
         self._add_app_btn = QtWidgets.QPushButton("+ Add App")
         self._update_app_list_btn = QtWidgets.QPushButton("Update App List")
+        self._delete_app_row_btn = QtWidgets.QPushButton("Delete Selected Row")
         button_row = QtWidgets.QHBoxLayout()
         button_row.addWidget(self._add_app_btn)
         button_row.addWidget(self._update_app_list_btn)
+        button_row.addWidget(self._delete_app_row_btn)
         button_row.addStretch()
         layout.addWidget(self.app_table)
         layout.addLayout(button_row)
@@ -284,12 +286,39 @@ class MappingWindow(QtWidgets.QWidget):
         self.save_btn.clicked.connect(self.save_from_table)
         self._add_app_btn.clicked.connect(self._open_add_app_dialog)
         self._update_app_list_btn.clicked.connect(self._refresh_app_list)
+        self._delete_app_row_btn.clicked.connect(self._delete_selected_app_rows)
         self._camera_view_toggle.toggled.connect(self._save_camera_view_setting)
         self._add_game_btn.clicked.connect(lambda: self._add_game_row())
         self._add_file_btn.clicked.connect(lambda: self._add_file_row())
         for i, btn in enumerate(self._nav_buttons):
             btn.clicked.connect(lambda _, idx=i: self._navigate(idx))
         self._navigate(0)  # start on App Actions
+
+    def _delete_selected_app_rows(self) -> None:
+        """Delete selected dynamic rows from the App Actions table."""
+        selection_model = self.app_table.selectionModel()
+        selected_rows = sorted(
+            {
+                index.row()
+                for index in selection_model.selectedIndexes()
+                if index.column() == 0
+            },
+            reverse=True,
+        )
+        if not selected_rows:
+            self.status.setText("Select the action cell in column 1 to delete row(s).")
+            return
+
+        dynamic_rows = [row for row in selected_rows if row >= self._APP_TABLE_ROWS]
+        if not dynamic_rows:
+            self.status.setText("Built-in app rows cannot be deleted.")
+            return
+
+        for row in dynamic_rows:
+            self.app_table.removeRow(row)
+
+        self._refresh_gesture_options()
+        self.status.setText("Selected row(s) deleted.")
 
     def _refresh_app_list(self) -> None:
         """Regenerate app_data.json from currently installed apps."""
