@@ -1,13 +1,12 @@
 import json
 import os
+import importlib
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 MAPPING_PATH = os.path.join(BASE_DIR, "gui", "gesture_mapping.json")
 APP_DATA_PATH = os.path.join(BASE_DIR, "app_data.json")
 
 SUPPORTED_ACTIONS = [
-    "open:notepad",
-    "close:notepad",
     "stop",
 ]
 
@@ -30,6 +29,7 @@ GAME_RUN_PATH_KEY = "game_run_path"       # kept for backward-compat loading
 GAME_RUN_PATHS_KEY = "game_run_paths"
 FILE_RUN_ENTRIES_KEY = "file_run_entries"
 DYNAMIC_APPS_KEY = "dynamic_apps"
+CAMERA_VIEW_ENABLED_KEY = "camera_view_enabled"
 
 def is_run_action(action: str) -> bool:
     """Return True if *action* represents a user-chosen file to open."""
@@ -60,6 +60,55 @@ def load_app_data(path: str = APP_DATA_PATH) -> dict:
     """
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def update_app_data() -> None:
+    """
+    Regenerate app_data.json for the current machine using AppOpener.
+
+    AppOpener versions differ:
+    - Newer versions may expose `create_app_data()` directly.
+    - Older versions expose `mklist()` which writes a file named `app_data`
+      (without the .json extension).
+
+    This function handles both cases and always leaves this project with a
+    refreshed `app_data.json` at APP_DATA_PATH.
+    """
+    app_opener = importlib.import_module("AppOpener")
+    create_app_data_fn = getattr(app_opener, "create_app_data", None)
+    if callable(create_app_data_fn):
+        create_app_data_fn()
+        return
+
+    mklist_fn = getattr(app_opener, "mklist", None)
+    if not callable(mklist_fn):
+        raise RuntimeError("AppOpener does not expose create_app_data or mklist")
+
+    mklist_fn(name="app_data", path=BASE_DIR, output=False)
+    generated_path = os.path.join(BASE_DIR, "app_data")
+    if os.path.exists(generated_path):
+        os.replace(generated_path, APP_DATA_PATH)
+
+
+def load_camera_view_enabled(path: str = MAPPING_PATH) -> bool:
+    """
+    Load whether the live camera preview window should be shown.
+    Defaults to False when key is missing.
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return bool(data.get(CAMERA_VIEW_ENABLED_KEY, False))
+
+
+def save_camera_view_enabled(enabled: bool, path: str = MAPPING_PATH) -> None:
+    """
+    Persist the camera preview visibility toggle.
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    data[CAMERA_VIEW_ENABLED_KEY] = bool(enabled)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
 
 def load_dynamic_apps(path: str = MAPPING_PATH) -> list:
     """
@@ -119,6 +168,7 @@ def save_mapping(
     game_run_paths: list = None,
     file_run_entries: list = None,
     dynamic_apps: list = None,
+    camera_view_enabled: bool = False,
 ) -> None:
     """
     Persist the provided gesture-to-action mapping to JSON.
@@ -127,6 +177,7 @@ def save_mapping(
     out[DYNAMIC_APPS_KEY] = list(dynamic_apps) if dynamic_apps else []
     out[GAME_RUN_PATHS_KEY] = [str(p).strip() for p in (game_run_paths or []) if str(p).strip()]
     out[FILE_RUN_ENTRIES_KEY] = list(file_run_entries or [])
+    out[CAMERA_VIEW_ENABLED_KEY] = bool(camera_view_enabled)
 
     with open(path, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2)

@@ -10,7 +10,10 @@ from gui.actions import (
     load_game_run_paths,
     load_file_run_entries,
     load_app_data,
+    update_app_data,
     load_dynamic_apps,
+    load_camera_view_enabled,
+    save_camera_view_enabled,
     save_mapping,
     is_run_action,
     make_run_action,
@@ -53,6 +56,9 @@ class MappingWindow(QtWidgets.QWidget):
     # File table: all rows are dynamic
 
     _NO_GUI_GAME_ENGINE_RELATIVE_PATH = "gameEngine/gameEngine.exec"
+    _ACTION_DISPLAY_NAMES = {
+        "stop": "Stop Gesture Recognizer",
+    }
 
     def __init__(self):
         super().__init__()
@@ -112,8 +118,15 @@ class MappingWindow(QtWidgets.QWidget):
         self.app_table = QtWidgets.QTableWidget(self._APP_TABLE_ROWS, 2)
         self._init_table(self.app_table)
         self._add_app_btn = QtWidgets.QPushButton("+ Add App")
+        self._update_app_list_btn = QtWidgets.QPushButton("Update App List")
+        self._delete_app_row_btn = QtWidgets.QPushButton("Delete Selected Row")
+        button_row = QtWidgets.QHBoxLayout()
+        button_row.addWidget(self._add_app_btn)
+        button_row.addWidget(self._update_app_list_btn)
+        button_row.addWidget(self._delete_app_row_btn)
+        button_row.addStretch()
         layout.addWidget(self.app_table)
-        layout.addWidget(self._add_app_btn)
+        layout.addLayout(button_row)
         return page
 
     def _build_games_page(self) -> QtWidgets.QWidget:
@@ -148,7 +161,25 @@ class MappingWindow(QtWidgets.QWidget):
         """Build and return the Gesture Reference page."""
         page = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(page)
-        layout.addWidget(QtWidgets.QLabel("These gesture assignments are fixed and cannot be changed."))
+        layout.setSpacing(10)
+
+        display_title = QtWidgets.QLabel("Display Settings")
+        font = display_title.font()
+        font.setBold(True)
+        display_title.setFont(font)
+        layout.addWidget(display_title)
+        self._camera_view_toggle = QtWidgets.QCheckBox("Show Camera View")
+        self._camera_view_toggle.setChecked(False)
+        layout.addWidget(self._camera_view_toggle)
+
+        section_line_1 = QtWidgets.QFrame()
+        section_line_1.setFrameShape(QtWidgets.QFrame.HLine)
+        section_line_1.setFrameShadow(QtWidgets.QFrame.Sunken)
+        layout.addWidget(section_line_1)
+
+        fixed_title = QtWidgets.QLabel("Fixed Assignments")
+        fixed_title.setFont(font)
+        layout.addWidget(fixed_title)
 
         # Fixed assignments table
         info_table = QtWidgets.QTableWidget(1, 2)
@@ -166,6 +197,15 @@ class MappingWindow(QtWidgets.QWidget):
         info_table.setItem(0, 0, QtWidgets.QTableWidgetItem("Deactivate Low Power Mode"))
         info_table.setItem(0, 1, QtWidgets.QTableWidgetItem("Open_Palm (hold 2 s)"))
         layout.addWidget(info_table)
+
+        section_line_2 = QtWidgets.QFrame()
+        section_line_2.setFrameShape(QtWidgets.QFrame.HLine)
+        section_line_2.setFrameShadow(QtWidgets.QFrame.Sunken)
+        layout.addWidget(section_line_2)
+
+        guide_title = QtWidgets.QLabel("Gesture Guide")
+        guide_title.setFont(font)
+        layout.addWidget(guide_title)
 
         # Gesture icon grid
         layout.addWidget(QtWidgets.QLabel("Available gestures:"))
@@ -248,11 +288,55 @@ class MappingWindow(QtWidgets.QWidget):
         self.clear_btn.clicked.connect(self.clear_selections)
         self.save_btn.clicked.connect(self.save_from_table)
         self._add_app_btn.clicked.connect(self._open_add_app_dialog)
+        self._update_app_list_btn.clicked.connect(self._refresh_app_list)
+        self._delete_app_row_btn.clicked.connect(self._delete_selected_app_rows)
+        self._camera_view_toggle.toggled.connect(self._save_camera_view_setting)
         self._add_game_btn.clicked.connect(lambda: self._add_game_row())
         self._add_file_btn.clicked.connect(lambda: self._add_file_row())
         for i, btn in enumerate(self._nav_buttons):
             btn.clicked.connect(lambda _, idx=i: self._navigate(idx))
         self._navigate(0)  # start on App Actions
+
+    def _delete_selected_app_rows(self) -> None:
+        """Delete selected dynamic rows from the App Actions table."""
+        selection_model = self.app_table.selectionModel()
+        selected_rows = sorted(
+            {
+                index.row()
+                for index in selection_model.selectedIndexes()
+                if index.column() == 0
+            },
+            reverse=True,
+        )
+        if not selected_rows:
+            self.status.setText("Select the action cell in column 1 to delete row(s).")
+            return
+
+        dynamic_rows = [row for row in selected_rows if row >= self._APP_TABLE_ROWS]
+        if not dynamic_rows:
+            self.status.setText("Built-in app rows cannot be deleted.")
+            return
+
+        for row in dynamic_rows:
+            self.app_table.removeRow(row)
+
+        self._refresh_gesture_options()
+        self.status.setText("Selected row(s) deleted.")
+
+    def _refresh_app_list(self) -> None:
+        """Regenerate app_data.json from currently installed apps."""
+        try:
+            update_app_data()
+            self.status.setText("App list updated.")
+        except Exception as exc:
+            self.status.setText(f"Failed to update app list: {exc}")
+
+    def _save_camera_view_setting(self, enabled: bool) -> None:
+        """Persist the camera-view toggle immediately from Gesture Reference page."""
+        try:
+            save_camera_view_enabled(enabled)
+        except Exception as exc:
+            self.status.setText(f"Failed to save camera view setting: {exc}")
 
     def _navigate(self, index: int) -> None:
         """Switch to the page at *index* and mark the active nav button bold."""
@@ -278,11 +362,18 @@ class MappingWindow(QtWidgets.QWidget):
         combo.setCurrentIndex(idx if idx >= 0 else 0)
         return combo
 
-    def _set_action_cell(self, table: QtWidgets.QTableWidget, row: int, action: str) -> None:
+    def _set_action_cell(
+        self,
+        table: QtWidgets.QTableWidget,
+        row: int,
+        action: str,
+        display_text: str | None = None,
+    ) -> None:
         """
         Set the action text in the left column (read-only).
         """
-        action_item = QtWidgets.QTableWidgetItem(action)
+        action_item = QtWidgets.QTableWidgetItem(display_text if display_text is not None else action)
+        action_item.setData(QtCore.Qt.UserRole, action)
         action_item.setFlags(action_item.flags() & ~QtWidgets.QTableWidgetItem().flags().ItemIsEditable)
         table.setItem(row, 0, action_item)
 
@@ -451,12 +542,27 @@ class MappingWindow(QtWidgets.QWidget):
 
         # App table
         for row, action in enumerate(SUPPORTED_ACTIONS):
-            self._set_action_cell(self.app_table, row, action)
+            self._set_action_cell(
+                self.app_table,
+                row,
+                action,
+                display_text=self._ACTION_DISPLAY_NAMES.get(action),
+            )
             self._set_gesture_cell(self.app_table, row, action_to_gesture.get(action, ""))
 
-        # Dynamic app rows — restore from saved list
+        # Dynamic app rows — restore from saved list and include legacy mapped open/close apps
         self._clear_dynamic_app_rows()
-        for app_name in load_dynamic_apps():
+        dynamic_app_names = list(load_dynamic_apps())
+        mapped_open_close_apps = {
+            action.split(":", 1)[1].strip()
+            for action in action_to_gesture
+            if action.startswith("open:") or action.startswith("close:")
+        }
+        for app_name in sorted(mapped_open_close_apps):
+            if app_name and app_name not in dynamic_app_names:
+                dynamic_app_names.append(app_name)
+
+        for app_name in dynamic_app_names:
             open_action = f"open:{app_name}"
             close_action = f"close:{app_name}"
             self._add_app_row(
@@ -490,6 +596,10 @@ class MappingWindow(QtWidgets.QWidget):
             file_action = make_run_action(entry["path"])
             self._add_file_row(entry["path"], action_to_gesture.get(file_action, ""), entry["uses_camera"])
 
+        self._camera_view_toggle.blockSignals(True)
+        self._camera_view_toggle.setChecked(load_camera_view_enabled())
+        self._camera_view_toggle.blockSignals(False)
+
         self._refresh_gesture_options()
         self.status.setText("Previous selections loaded from file.")
 
@@ -521,7 +631,8 @@ class MappingWindow(QtWidgets.QWidget):
         # App table (static + dynamic rows)
         for row in range(self.app_table.rowCount()):
             action_item = self.app_table.item(row, 0)
-            action = action_item.text().strip() if action_item else ""
+            action = action_item.data(QtCore.Qt.UserRole) if action_item else ""
+            action = str(action).strip() if action else ""
             combo = self.app_table.cellWidget(row, 1)
             gesture = combo.currentText().strip() if combo else ""
             if action and gesture and gesture != "None":
@@ -578,7 +689,8 @@ class MappingWindow(QtWidgets.QWidget):
         for row in range(self._APP_TABLE_ROWS, self.app_table.rowCount()):
             action_item = self.app_table.item(row, 0)
             if action_item:
-                action = action_item.text().strip()
+                action = action_item.data(QtCore.Qt.UserRole)
+                action = str(action).strip() if action else ""
                 for prefix in ("open:", "close:"):
                     if action.startswith(prefix):
                         name = action[len(prefix):]
@@ -605,5 +717,6 @@ class MappingWindow(QtWidgets.QWidget):
             game_run_paths=game_run_paths,
             file_run_entries=file_run_entries,
             dynamic_apps=dynamic_apps,
+            camera_view_enabled=self._camera_view_toggle.isChecked(),
         )
         self.status.setText("Saved to file.")

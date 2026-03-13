@@ -2,7 +2,13 @@ import os
 from time import time
 import AppOpener
 from myGestureRecognizer.gestureRecogniser import VideoGestureRecogniser
-from gui.actions import load_mapping, load_run_uses_camera, is_run_action, get_run_path
+from gui.actions import (
+    load_mapping,
+    load_run_uses_camera,
+    load_camera_view_enabled,
+    is_run_action,
+    get_run_path,
+)
 from powerManager import PowerManager
 from cameraManager import CameraManager
 
@@ -11,7 +17,11 @@ class GestureController:
     Coordinates gesture events, app actions, and power-mode transitions.
     """
     def __init__(self):
-        self.videoGestureRecogniser: VideoGestureRecogniser = VideoGestureRecogniser(self)
+        self.camera_view_enabled = load_camera_view_enabled()
+        self.videoGestureRecogniser: VideoGestureRecogniser = VideoGestureRecogniser(
+            self,
+            show_camera_view=self.camera_view_enabled,
+        )
         self.powerManager = PowerManager(self.videoGestureRecogniser)
         # power manager is added afterwards as a subscriber since it needs videoGestureRecogniser as an argument
         self.videoGestureRecogniser.add_subscriber(self.powerManager)
@@ -31,7 +41,10 @@ class GestureController:
         """
         Create a fresh recognizer instance and rewire subscribers.
         """
-        self.videoGestureRecogniser = VideoGestureRecogniser(self)
+        self.videoGestureRecogniser = VideoGestureRecogniser(
+            self,
+            show_camera_view=self.camera_view_enabled,
+        )
         self.powerManager = PowerManager(self.videoGestureRecogniser)
         self.videoGestureRecogniser.add_subscriber(self.powerManager)
         self.prevUpdate = None
@@ -42,6 +55,21 @@ class GestureController:
         """
         self._rebuild_recogniser()
         self.videoGestureRecogniser.run()
+
+    def _project_root(self) -> str:
+        """Return absolute path to the project root."""
+        return os.path.dirname(os.path.abspath(__file__))
+
+    def _resolve_launch_path(self, path: str) -> str:
+        """
+        Resolve a run-action path into an absolute filesystem path.
+
+        Stored run paths are often project-relative (e.g. ../Downloads/foo.noui).
+        """
+        expanded = os.path.expandvars(os.path.expanduser(path.strip()))
+        if os.path.isabs(expanded):
+            return expanded
+        return os.path.abspath(os.path.join(self._project_root(), expanded))
 
     def update(self, update: str | None):
         """
@@ -113,10 +141,14 @@ class GestureController:
         if is_run_action(action):
             path = get_run_path(action)
             if path:
+                launch_path = self._resolve_launch_path(path)
+                if not os.path.exists(launch_path):
+                    print(f"Run target not found: {launch_path}")
+                    return
                 if self.run_uses_camera:
-                    self.cameraManager.handoff_to_process(path)
+                    self.cameraManager.handoff_to_process(launch_path)
                 else:
-                    os.startfile(path)
+                    os.startfile(launch_path)
             return
 
     def run(self):
