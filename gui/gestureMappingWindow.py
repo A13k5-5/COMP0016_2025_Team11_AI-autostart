@@ -136,8 +136,13 @@ class MappingWindow(QtWidgets.QWidget):
         self.game_table = QtWidgets.QTableWidget(1, 2)  # starts with only the engine row
         self._init_table(self.game_table)
         self._add_game_btn = QtWidgets.QPushButton("+ Add Game")
+        self._delete_game_row_btn = QtWidgets.QPushButton("Delete Selected Row")
+        button_row = QtWidgets.QHBoxLayout()
+        button_row.addWidget(self._add_game_btn)
+        button_row.addWidget(self._delete_game_row_btn)
+        button_row.addStretch()
         layout.addWidget(self.game_table)
-        layout.addWidget(self._add_game_btn)
+        layout.addLayout(button_row)
         return page
 
     def _build_files_page(self) -> QtWidgets.QWidget:
@@ -153,8 +158,13 @@ class MappingWindow(QtWidgets.QWidget):
         self.file_table.setColumnWidth(0, 280)
         self.file_table.setColumnWidth(1, 100)
         self._add_file_btn = QtWidgets.QPushButton("+ Add File")
+        self._delete_file_row_btn = QtWidgets.QPushButton("Delete Selected Row")
+        button_row = QtWidgets.QHBoxLayout()
+        button_row.addWidget(self._add_file_btn)
+        button_row.addWidget(self._delete_file_row_btn)
+        button_row.addStretch()
         layout.addWidget(self.file_table)
-        layout.addWidget(self._add_file_btn)
+        layout.addLayout(button_row)
         return page
 
     def _build_reference_page(self) -> QtWidgets.QWidget:
@@ -289,39 +299,65 @@ class MappingWindow(QtWidgets.QWidget):
         self.save_btn.clicked.connect(self.save_from_table)
         self._add_app_btn.clicked.connect(self._open_add_app_dialog)
         self._update_app_list_btn.clicked.connect(self._refresh_app_list)
-        self._delete_app_row_btn.clicked.connect(self._delete_selected_app_rows)
+        self._delete_app_row_btn.clicked.connect(
+            lambda: self._delete_rows_from_table(
+                self.app_table,
+                static_rows=self._APP_TABLE_ROWS,
+                page_label="App Actions",
+            )
+        )
         self._camera_view_toggle.toggled.connect(self._save_camera_view_setting)
         self._add_game_btn.clicked.connect(lambda: self._add_game_row())
+        self._delete_game_row_btn.clicked.connect(
+            lambda: self._delete_rows_from_table(
+                self.game_table,
+                static_rows=1,
+                page_label="Game Actions",
+            )
+        )
         self._add_file_btn.clicked.connect(lambda: self._add_file_row())
+        self._delete_file_row_btn.clicked.connect(
+            lambda: self._delete_rows_from_table(
+                self.file_table,
+                static_rows=0,
+                page_label="File Opening",
+            )
+        )
         for i, btn in enumerate(self._nav_buttons):
             btn.clicked.connect(lambda _, idx=i: self._navigate(idx))
         self._navigate(0)  # start on App Actions
 
-    def _delete_selected_app_rows(self) -> None:
-        """Delete selected dynamic rows from the App Actions table."""
-        selection_model = self.app_table.selectionModel()
-        selected_rows = sorted(
-            {
-                index.row()
-                for index in selection_model.selectedIndexes()
-                if index.column() == 0
-            },
-            reverse=True,
-        )
+    def _selected_rows(self, table: QtWidgets.QTableWidget) -> list[int]:
+        """Return selected row indexes from a table in descending order."""
+        selection_model = table.selectionModel()
+        if selection_model is None:
+            return []
+
+        rows = {index.row() for index in selection_model.selectedRows()}
+        if not rows:
+            rows = {index.row() for index in selection_model.selectedIndexes()}
+        if not rows and table.currentRow() >= 0:
+            rows = {table.currentRow()}
+
+        return sorted(rows, reverse=True)
+
+    def _delete_rows_from_table(self, table: QtWidgets.QTableWidget, static_rows: int, page_label: str) -> None:
+        """Delete selected dynamic rows from any mapping table."""
+        selected_rows = self._selected_rows(table)
         if not selected_rows:
-            self.status.setText("Select the action cell in column 1 to delete row(s).")
+            self.status.setText(f"Select row(s) in {page_label} to delete.")
             return
 
-        dynamic_rows = [row for row in selected_rows if row >= self._APP_TABLE_ROWS]
+        dynamic_rows = [row for row in selected_rows if row >= static_rows]
         if not dynamic_rows:
-            self.status.setText("Built-in app rows cannot be deleted.")
+            self.status.setText(f"Built-in rows in {page_label} cannot be deleted.")
             return
 
         for row in dynamic_rows:
-            self.app_table.removeRow(row)
+            table.removeRow(row)
 
         self._refresh_gesture_options()
-        self.status.setText("Selected row(s) deleted.")
+        self.status.setText(f"Selected row(s) deleted from {page_label}.")
 
     def _refresh_app_list(self) -> None:
         """Regenerate app_data.json from currently installed apps."""
