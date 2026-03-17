@@ -3,10 +3,11 @@
   "Closed_Fist": "run:../Downloads/hobbit.noui",
   "Victory": "run:C:/Users/pison/OneDrive/Po\u010d\u00edta\u010d/ocino 50.mov",
   "ILoveYou": "stop",
-  "Thumb_Up": "open:notepad",
-  "Thumb_Down": "close:notepad",
+  "Thumb_Up": "run:gameEngine/main.dist/main.exe",
+  "Thumb_Down": "open:notepad",
   "dynamic_apps": [
-    "calculator"
+    "calculator",
+    "notepad"
   ],
   "game_run_paths": [
     "../Downloads/hobbit.noui"
@@ -21,5 +22,5 @@
       "uses_camera": false
     }
   ],
-  "camera_view_enabled": false
+  "camera_view_enabled": true
 }

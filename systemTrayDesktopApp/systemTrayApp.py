@@ -5,6 +5,7 @@ import os
 import subprocess
 
 from gui.actions import update_app_data
+from runtimeSignals import request_recognizer_stop
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
@@ -19,6 +20,10 @@ def exit_app(icon, item):
 
 def gesture_monitoring(icon, item):
     _launch_script("main.py")
+
+
+def stop_gesture_monitoring(icon, item):
+    request_recognizer_stop()
 
 def mapping_window(icon, item):
     _launch_script("runGUI.py")
@@ -36,6 +41,7 @@ def main() -> None:
 
     menu = pystray.Menu(
         pystray.MenuItem("Start gesture monitoring", gesture_monitoring),
+        pystray.MenuItem("Stop gesture monitoring", stop_gesture_monitoring),
         pystray.MenuItem("Open settings", mapping_window),
         pystray.MenuItem("Exit", exit_app)
     )
