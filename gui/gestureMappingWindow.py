@@ -55,7 +55,7 @@ class MappingWindow(QtWidgets.QWidget):
     _GAME_ENGINE_ROW: int = 0
     # File table: all rows are dynamic
 
-    _NO_GUI_GAME_ENGINE_RELATIVE_PATH = "gameEngine/gameEngine.exec"
+    _NO_GUI_GAME_ENGINE_RELATIVE_PATH = "gameEngine/main.dist/main.exe"
     _ACTION_DISPLAY_NAMES = {
         "stop": "Stop Gesture Recognizer",
     }
