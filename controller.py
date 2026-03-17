@@ -3,6 +3,7 @@ from time import time
 import AppOpener
 from myGestureRecognizer.gestureRecogniser import VideoGestureRecogniser
 from gui.actions import (
+    MAPPING_PATH,
     load_mapping,
     load_run_uses_camera,
     load_camera_view_enabled,
@@ -11,6 +12,7 @@ from gui.actions import (
 )
 from powerManager import PowerManager
 from cameraManager import CameraManager
+from runtimeSignals import consume_recognizer_stop_request
 
 class GestureController:
     """
@@ -36,6 +38,7 @@ class GestureController:
 
         self.gesture_mapping = load_mapping()
         self.run_uses_camera = load_run_uses_camera()
+        self._mapping_mtime = self._get_mapping_mtime()
 
     def _rebuild_recogniser(self) -> None:
         """
@@ -60,6 +63,25 @@ class GestureController:
         """Return absolute path to the project root."""
         return os.path.dirname(os.path.abspath(__file__))
 
+    def _get_mapping_mtime(self) -> float:
+        """Return gesture mapping file modified time (0.0 when unavailable)."""
+        try:
+            return os.path.getmtime(MAPPING_PATH)
+        except OSError:
+            return 0.0
+
+    def _reload_runtime_settings_if_needed(self) -> None:
+        """Hot-reload runtime settings when gesture mapping file changes."""
+        current_mtime = self._get_mapping_mtime()
+        if current_mtime <= self._mapping_mtime:
+            return
+
+        self._mapping_mtime = current_mtime
+        self.gesture_mapping = load_mapping()
+        self.run_uses_camera = load_run_uses_camera()
+        self.camera_view_enabled = load_camera_view_enabled()
+        self.videoGestureRecogniser.show_camera_view = self.camera_view_enabled
+
     def _resolve_launch_path(self, path: str) -> str:
         """
         Resolve a run-action path into an absolute filesystem path.
@@ -78,6 +100,11 @@ class GestureController:
         Args:
             update: Detected gesture name, or None when no gesture is detected.
         """
+        self._reload_runtime_settings_if_needed()
+        if consume_recognizer_stop_request():
+            self.videoGestureRecogniser.stop()
+            return
+
         now = time()
 
         # no gesture detected
