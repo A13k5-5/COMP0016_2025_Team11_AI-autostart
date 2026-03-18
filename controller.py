@@ -31,7 +31,7 @@ class GestureController:
         # power manager is added afterwards as a subscriber since it needs videoGestureRecogniser as an argument
         self.videoGestureRecogniser.add_subscriber(self.powerManager)
         self.cameraManager = CameraManager(
-            stop_capture=lambda: self.videoGestureRecogniser.stop(),
+            stop_capture=lambda: self.videoGestureRecogniser.stop(wait=True),
             resume_capture=self._resume_capture_after_handoff,
         )
 
