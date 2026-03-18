@@ -7,6 +7,7 @@ from gui.actions import (
     load_mapping,
     load_run_uses_camera,
     load_camera_view_enabled,
+    load_person_recognition_enabled,
     is_run_action,
     get_run_path,
 )
@@ -20,9 +21,11 @@ class GestureController:
     """
     def __init__(self):
         self.camera_view_enabled = load_camera_view_enabled()
+        self.person_recognition_enabled = load_person_recognition_enabled()
         self.videoGestureRecogniser: VideoGestureRecogniser = VideoGestureRecogniser(
             self,
             show_camera_view=self.camera_view_enabled,
+            use_person_recognition=self.person_recognition_enabled,
         )
         self.powerManager = PowerManager(self.videoGestureRecogniser)
         # power manager is added afterwards as a subscriber since it needs videoGestureRecogniser as an argument
@@ -47,6 +50,7 @@ class GestureController:
         self.videoGestureRecogniser = VideoGestureRecogniser(
             self,
             show_camera_view=self.camera_view_enabled,
+            use_person_recognition=self.person_recognition_enabled,
         )
         self.powerManager = PowerManager(self.videoGestureRecogniser)
         self.videoGestureRecogniser.add_subscriber(self.powerManager)
@@ -80,7 +84,9 @@ class GestureController:
         self.gesture_mapping = load_mapping()
         self.run_uses_camera = load_run_uses_camera()
         self.camera_view_enabled = load_camera_view_enabled()
+        self.person_recognition_enabled = load_person_recognition_enabled()
         self.videoGestureRecogniser.show_camera_view = self.camera_view_enabled
+        self.videoGestureRecogniser.use_person_recognition = self.person_recognition_enabled
 
     def _resolve_launch_path(self, path: str) -> str:
         """
