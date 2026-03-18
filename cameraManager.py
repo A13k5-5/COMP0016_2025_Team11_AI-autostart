@@ -1,5 +1,6 @@
 import subprocess
 import threading
+import time
 from collections.abc import Callable
 
 
@@ -39,6 +40,7 @@ class CameraManager:
         """
         try:
             self._stop_capture()
+            time.sleep(0.35)
             subprocess.run(["cmd", "/c", "start", "/wait", "", path], check=False)
         finally:
             self._resume_capture()
