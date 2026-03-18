@@ -13,7 +13,9 @@ from gui.actions import (
     update_app_data,
     load_dynamic_apps,
     load_camera_view_enabled,
+    load_person_recognition_enabled,
     save_camera_view_enabled,
+    save_person_recognition_enabled,
     save_mapping,
     is_run_action,
     make_run_action,
@@ -182,6 +184,18 @@ class MappingWindow(QtWidgets.QWidget):
         self._camera_view_toggle.setChecked(False)
         layout.addWidget(self._camera_view_toggle)
 
+        person_row = QtWidgets.QHBoxLayout()
+        self._person_recognition_toggle = QtWidgets.QCheckBox("Use Person Recognition")
+        self._person_recognition_toggle.setChecked(True)
+        person_info_btn = QtWidgets.QToolButton()
+        person_info_btn.setText("ℹ")
+        person_info_btn.setAutoRaise(True)
+        person_info_btn.clicked.connect(self._show_person_recognition_info)
+        person_row.addWidget(self._person_recognition_toggle)
+        person_row.addWidget(person_info_btn)
+        person_row.addStretch()
+        layout.addLayout(person_row)
+
         section_line_1 = QtWidgets.QFrame()
         section_line_1.setFrameShape(QtWidgets.QFrame.HLine)
         section_line_1.setFrameShadow(QtWidgets.QFrame.Sunken)
@@ -307,6 +321,7 @@ class MappingWindow(QtWidgets.QWidget):
             )
         )
         self._camera_view_toggle.toggled.connect(self._save_camera_view_setting)
+        self._person_recognition_toggle.toggled.connect(self._save_person_recognition_setting)
         self._add_game_btn.clicked.connect(lambda: self._add_game_row())
         self._delete_game_row_btn.clicked.connect(
             lambda: self._delete_rows_from_table(
@@ -373,6 +388,22 @@ class MappingWindow(QtWidgets.QWidget):
             save_camera_view_enabled(enabled)
         except Exception as exc:
             self.status.setText(f"Failed to save camera view setting: {exc}")
+
+    def _save_person_recognition_setting(self, enabled: bool) -> None:
+        """Persist the person-recognition toggle immediately from Gesture Reference page."""
+        try:
+            save_person_recognition_enabled(enabled)
+        except Exception as exc:
+            self.status.setText(f"Failed to save person recognition setting: {exc}")
+
+    def _show_person_recognition_info(self) -> None:
+        """Show why disabling person recognition can improve performance."""
+        QtWidgets.QToolTip.showText(
+            QtGui.QCursor.pos(),
+            "Use Person Recognition narrows gesture analysis to a detected person.\n"
+            "If you're alone in a private, low-motion space, disabling it can reduce compute load and improve performance.",
+            self,
+        )
 
     def _navigate(self, index: int) -> None:
         """Switch to the page at *index* and mark the active nav button bold."""
@@ -635,6 +666,9 @@ class MappingWindow(QtWidgets.QWidget):
         self._camera_view_toggle.blockSignals(True)
         self._camera_view_toggle.setChecked(load_camera_view_enabled())
         self._camera_view_toggle.blockSignals(False)
+        self._person_recognition_toggle.blockSignals(True)
+        self._person_recognition_toggle.setChecked(load_person_recognition_enabled())
+        self._person_recognition_toggle.blockSignals(False)
 
         self._refresh_gesture_options()
         self.status.setText("Previous selections loaded from file.")
@@ -754,5 +788,6 @@ class MappingWindow(QtWidgets.QWidget):
             file_run_entries=file_run_entries,
             dynamic_apps=dynamic_apps,
             camera_view_enabled=self._camera_view_toggle.isChecked(),
+            person_recognition_enabled=self._person_recognition_toggle.isChecked(),
         )
         self.status.setText("Saved to file.")
