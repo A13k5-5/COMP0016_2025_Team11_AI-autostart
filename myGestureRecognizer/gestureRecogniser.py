@@ -14,7 +14,7 @@ from .personRecogniser import PersonRecogniser
 WINDOW_NAME = "Hand Detection"
 
 class VideoGestureRecogniser:
-    def __init__(self, controller, show_camera_view: bool = False):
+    def __init__(self, controller, show_camera_view: bool = False, use_person_recognition: bool = True):
         """
         Initialize recognizer resources and subscriber list.
         """
@@ -24,7 +24,8 @@ class VideoGestureRecogniser:
         self._is_low_power_mode = False
         self.subscribers = [controller]
         self.isRunning = True
-        self.person_recognizer = PersonRecogniser()
+        self.use_person_recognition = bool(use_person_recognition)
+        self.person_recognizer = PersonRecogniser() if self.use_person_recognition else None
         self.show_camera_view = bool(show_camera_view)
 
     def stop(self):
@@ -99,6 +100,12 @@ class VideoGestureRecogniser:
         """
         Detect the main person in the frame and crop accordingly.
         """
+        if not self.use_person_recognition:
+            return frame
+
+        if self.person_recognizer is None:
+            self.person_recognizer = PersonRecogniser()
+
         person_box = self.person_recognizer.detect_main_person(frame)
         if person_box:
             top, left, bottom, right = person_box
