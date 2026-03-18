@@ -22,5 +22,6 @@
       "uses_camera": false
     }
   ],
-  "camera_view_enabled": true
+  "camera_view_enabled": true,
+  "person_recognition_enabled": true
 }
