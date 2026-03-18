@@ -9,21 +9,36 @@ from runtimeSignals import request_recognizer_stop
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
+_recognizer_process: subprocess.Popen | None = None
 
 def _launch_script(script_name: str) -> None:
     """Launch a project script in a separate process."""
     script_path = os.path.join(PROJECT_ROOT, script_name)
     subprocess.Popen([sys.executable, script_path], cwd=PROJECT_ROOT)
 
+
+def _launch_recognizer_once() -> None:
+    """Launch recognizer process only when it is not already running."""
+    global _recognizer_process
+    if _recognizer_process is not None and _recognizer_process.poll() is None:
+        print("Gesture monitoring is already running.")
+        return
+
+    script_path = os.path.join(PROJECT_ROOT, "main.py")
+    _recognizer_process = subprocess.Popen([sys.executable, script_path], cwd=PROJECT_ROOT)
+
 def exit_app(icon, item):
     icon.stop()
 
 def gesture_monitoring(icon, item):
-    _launch_script("main.py")
+    _launch_recognizer_once()
 
 
 def stop_gesture_monitoring(icon, item):
+    global _recognizer_process
     request_recognizer_stop()
+    if _recognizer_process is not None and _recognizer_process.poll() is not None:
+        _recognizer_process = None
 
 def mapping_window(icon, item):
     _launch_script("runGUI.py")
