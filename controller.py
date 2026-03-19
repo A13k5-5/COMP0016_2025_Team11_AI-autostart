@@ -3,6 +3,7 @@ import threading
 from time import time, sleep
 import AppOpener
 from myGestureRecognizer.gestureRecogniser import VideoGestureRecogniser
+from myGestureRecognizer.gestureLabels import EnumGesture
 from gui.actions import (
     MAPPING_PATH,
     load_mapping,
@@ -132,7 +133,7 @@ class GestureController:
         self.last_gesture_detected_at = now
 
         # reserved for low-power mode handling in PowerManager
-        if update == "Open_Palm":
+        if update == EnumGesture.OPEN_PALM.value:
             self.prevUpdate = update
             return
 
