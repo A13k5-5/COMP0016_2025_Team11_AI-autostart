@@ -1,9 +1,12 @@
+import os
 import subprocess
 import sys
 import threading
 import time
 from collections.abc import Callable
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+EXE_PATH = os.path.join(BASE_DIR, "gameEngine", "main.dist", "main.exe")
 
 class CameraManager:
     """
@@ -64,14 +67,13 @@ class CameraManager:
         """
         Release webcam, wait for launched process exit, then resume capture.
         """
-        exe_path = r"C:\\Users\\teole\\AI-autostart\\gameEngine\\main.dist\\main.exe"
         try:
             if self._pre_stop_delay_s > 0:
                 time.sleep(self._pre_stop_delay_s)
             self._stop_capture()
             if self._post_stop_delay_s > 0:
                 time.sleep(self._post_stop_delay_s)
-            process = subprocess.Popen([exe_path, path])
+            process = subprocess.Popen([EXE_PATH, path])
             process.wait()
         finally:
             with self._handoff_lock:
