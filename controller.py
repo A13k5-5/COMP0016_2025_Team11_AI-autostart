@@ -1,5 +1,6 @@
 import os
-from time import time
+import threading
+from time import time, sleep
 import AppOpener
 from myGestureRecognizer.gestureRecogniser import VideoGestureRecogniser
 from gui.actions import (
@@ -30,9 +31,10 @@ class GestureController:
         self.powerManager = PowerManager(self.videoGestureRecogniser)
         # power manager is added afterwards as a subscriber since it needs videoGestureRecogniser as an argument
         self.videoGestureRecogniser.add_subscriber(self.powerManager)
+        self._resume_requested = threading.Event()
         self.cameraManager = CameraManager(
             stop_capture=lambda: self.videoGestureRecogniser.stop(wait=True),
-            resume_capture=self._resume_capture_after_handoff,
+            resume_capture=self._request_resume_after_handoff,
             pre_stop_delay_s=0.2,
             post_stop_delay_s=0.25,
         )
@@ -58,12 +60,15 @@ class GestureController:
         self.videoGestureRecogniser.add_subscriber(self.powerManager)
         self.prevUpdate = None
 
+    def _request_resume_after_handoff(self) -> None:
+        """Signal that recognizer should be resumed after handoff completion."""
+        self._resume_requested.set()
+
     def _resume_capture_after_handoff(self) -> None:
         """
-        Rebuild recognizer and resume capture after external app exits.
+        Rebuild recognizer after external app exits.
         """
         self._rebuild_recogniser()
-        self.videoGestureRecogniser.run()
 
     def _project_root(self) -> str:
         """Return absolute path to the project root."""
@@ -188,6 +193,17 @@ class GestureController:
 
     def run(self):
         """
-        Start the underlying video gesture recognizer loop.
+        Start recognizer loop and handle handoff-triggered restarts in this thread.
         """
-        self.videoGestureRecogniser.run()
+        while True:
+            self.videoGestureRecogniser.run()
+
+            while self.cameraManager.is_handoff_active() and not self._resume_requested.is_set():
+                sleep(0.1)
+
+            if self._resume_requested.is_set():
+                self._resume_requested.clear()
+                self._resume_capture_after_handoff()
+                continue
+
+            break

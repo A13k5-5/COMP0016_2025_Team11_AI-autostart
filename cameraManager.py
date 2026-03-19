@@ -1,4 +1,5 @@
 import subprocess
+import sys
 import threading
 import time
 from collections.abc import Callable
@@ -44,6 +45,21 @@ class CameraManager:
         thread = threading.Thread(target=self._handoff_worker, args=(path,), daemon=False)
         thread.start()
 
+    def is_handoff_active(self) -> bool:
+        """Return True while handoff worker is active."""
+        with self._handoff_lock:
+            return self._handoff_active
+
+    def _resume_capture_safe(self) -> None:
+        if sys.is_finalizing():
+            return
+        try:
+            self._resume_capture()
+        except RuntimeError as exc:
+            if "interpreter shutdown" in str(exc).lower():
+                return
+            raise
+
     def _handoff_worker(self, path: str) -> None:
         """
         Release webcam, wait for launched process exit, then resume capture.
@@ -60,4 +76,5 @@ class CameraManager:
         finally:
             with self._handoff_lock:
                 self._handoff_active = False
-            self._resume_capture()
+            resume_thread = threading.Thread(target=self._resume_capture_safe, daemon=False)
+            resume_thread.start()
