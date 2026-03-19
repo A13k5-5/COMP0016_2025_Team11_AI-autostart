@@ -33,6 +33,8 @@ class GestureController:
         self.cameraManager = CameraManager(
             stop_capture=lambda: self.videoGestureRecogniser.stop(wait=True),
             resume_capture=self._resume_capture_after_handoff,
+            pre_stop_delay_s=0.2,
+            post_stop_delay_s=0.25,
         )
 
         self.prevUpdate = None
@@ -179,6 +181,7 @@ class GestureController:
                     print(f"Run target not found: {launch_path}")
                     return
                 if self.run_uses_camera:
+                    os.startfile(launch_path)
                     self.cameraManager.handoff_to_process(launch_path)
                 else:
                     os.startfile(launch_path)
