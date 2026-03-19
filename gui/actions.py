@@ -1,6 +1,10 @@
 import json
 import os
 import importlib
+from myGestureRecognizer.gestureLabels import (
+    EnumGesture,
+    SUPPORTED_GESTURES as CANONICAL_SUPPORTED_GESTURES,
+)
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 MAPPING_PATH = os.path.join(BASE_DIR, "gui", "gesture_mapping.json")
@@ -10,17 +14,10 @@ SUPPORTED_ACTIONS = [
     "stop",
 ]
 
-SUPPORTED_GESTURES = [
-    "Pointing_Up",
-    "Closed_Fist",
-    "Victory",
-    "ILoveYou",
-    "Thumb_Up",
-    "Thumb_Down",
-]
+SUPPORTED_GESTURES = list(CANONICAL_SUPPORTED_GESTURES)
 
 # reserved for LPM activation
-RESERVED_GESTURES = {"Open_Palm"}
+RESERVED_GESTURES = {EnumGesture.OPEN_PALM.value}
 
 # Prefix used for user-defined executable actions stored in the mapping file.
 RUN_PREFIX = "run:"
