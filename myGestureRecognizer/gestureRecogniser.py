@@ -8,6 +8,7 @@ from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import GestureRecognizer, RunningMode, GestureRecognizerOptions, GestureRecognizerResult
 
 from .fps import FPS
+from .gestureLabels import EnumGesture
 from .haloEffect import draw_halo_effect
 from .videoCaptureManager import video_capture_manager
 from .personRecogniser import PersonRecogniser
@@ -89,7 +90,16 @@ class VideoGestureRecogniser:
             return
 
         gesture_name = result.gestures[0][0].category_name
-        self.update_subscribers(gesture_name)
+        handedness = ""
+        if result.handedness and result.handedness[0]:
+            handedness = result.handedness[0][0].category_name
+
+        gesture = EnumGesture.from_gesture(gesture_name, handedness)
+        if gesture == EnumGesture.INVALID:
+            self.update_subscribers(None)
+            return
+
+        self.update_subscribers(gesture.value)
     
     def _capture_frame(self, cap):
         """
