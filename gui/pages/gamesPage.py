@@ -66,12 +66,14 @@ class GamesPage(QtWidgets.QWidget):
         while self.table.rowCount() > self.static_rows:
             self.table.removeRow(self.table.rowCount() - 1)
 
-    def add_game_row(self, exe_path: str = "", gesture: str = "") -> None:
+    def add_game_row(self, exe_path: str = "", gesture: str = "", refresh_options: bool = True) -> None:
         row = self.table.rowCount()
         self.table.insertRow(row)
         build_path_browse_cell(self.table, row, exe_path, self._browse_game_file_into)
 
         self._set_gesture_cell(row, gesture)
+        if refresh_options:
+            self.on_gesture_changed()
 
     def _browse_game_file_into(self, label: QtWidgets.QLabel) -> None:
         path, _ = QtWidgets.QFileDialog.getOpenFileName(

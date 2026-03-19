@@ -71,12 +71,20 @@ class AppsPage(QtWidgets.QWidget):
         while self.table.rowCount() > self.static_rows:
             self.table.removeRow(self.table.rowCount() - 1)
 
-    def add_app_row(self, app_name: str, open_gesture: str = "", close_gesture: str = "") -> None:
+    def add_app_row(
+        self,
+        app_name: str,
+        open_gesture: str = "",
+        close_gesture: str = "",
+        refresh_options: bool = True,
+    ) -> None:
         for prefix, gesture in (("open", open_gesture), ("close", close_gesture)):
             row = self.table.rowCount()
             self.table.insertRow(row)
             self._set_action_cell(row, f"{prefix}:{app_name}")
             self._set_gesture_cell(row, gesture)
+        if refresh_options:
+            self.on_gesture_changed()
 
     def _open_add_app_dialog(self) -> None:
         app_names = list(load_app_data().keys())
@@ -85,7 +93,6 @@ class AppsPage(QtWidgets.QWidget):
             app_name = dlg.selected_app()
             if app_name:
                 self.add_app_row(app_name)
-                self.on_gesture_changed()
 
     def _refresh_app_list(self) -> None:
         try:

@@ -160,6 +160,7 @@ class MappingWindow(QtWidgets.QWidget):
                 app_name,
                 open_gesture=action_to_gesture.get(f"open:{app_name}", ""),
                 close_gesture=action_to_gesture.get(f"close:{app_name}", ""),
+                refresh_options=False,
             )
 
         no_gui_action = make_run_action(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
@@ -169,7 +170,11 @@ class MappingWindow(QtWidgets.QWidget):
         self.games_page.clear_dynamic_rows()
         for game_path in game_run_paths_list:
             game_action = make_run_action(game_path)
-            self.games_page.add_game_row(game_path, action_to_gesture.get(game_action, ""))
+            self.games_page.add_game_row(
+                game_path,
+                action_to_gesture.get(game_action, ""),
+                refresh_options=False,
+            )
 
         file_entries = ensure_file_entries(
             file_entries=load_file_run_entries(),
@@ -186,6 +191,7 @@ class MappingWindow(QtWidgets.QWidget):
                 entry["path"],
                 action_to_gesture.get(file_action, ""),
                 entry["uses_camera"],
+                refresh_options=False,
             )
 
         self.reference_page.camera_view_toggle.blockSignals(True)

@@ -55,7 +55,13 @@ class FilesPage(QtWidgets.QWidget):
     def _create_gesture_combo(self, current_gesture: str) -> QtWidgets.QComboBox:
         return create_gesture_combo(self.supported_gestures, current_gesture, self.on_gesture_changed)
 
-    def add_file_row(self, exe_path: str = "", gesture: str = "", uses_camera: bool = False) -> None:
+    def add_file_row(
+        self,
+        exe_path: str = "",
+        gesture: str = "",
+        uses_camera: bool = False,
+        refresh_options: bool = True,
+    ) -> None:
         row = self.table.rowCount()
         self.table.insertRow(row)
         build_path_browse_cell(self.table, row, exe_path, self._browse_file_into)
@@ -72,6 +78,8 @@ class FilesPage(QtWidgets.QWidget):
 
         combo = self._create_gesture_combo(gesture)
         self.table.setCellWidget(row, 2, combo)
+        if refresh_options:
+            self.on_gesture_changed()
 
     def _browse_file_into(self, label: QtWidgets.QLabel) -> None:
         path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select File", "", "All Files (*)")
