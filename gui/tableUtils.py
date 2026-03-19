@@ -1,4 +1,12 @@
 from PySide6 import QtCore, QtWidgets
+from myGestureRecognizer.gestureLabels import to_display_text
+
+
+def _combo_gesture_id(combo: QtWidgets.QComboBox | None) -> str:
+    if combo is None:
+        return ""
+    value = combo.currentData()
+    return str(value).strip() if value else ""
 
 
 def iter_gesture_combos(
@@ -29,17 +37,19 @@ def refresh_gesture_options(
 ) -> None:
     """Limit each dropdown to gestures not already used in other rows."""
     combos = list(iter_gesture_combos(app_table, game_table, file_table))
-    selected = [combo.currentText().strip() for combo in combos]
+    selected = [_combo_gesture_id(combo) for combo in combos]
 
     for combo in combos:
-        current = combo.currentText().strip()
+        current = _combo_gesture_id(combo)
         used_by_others = {gesture for gesture in selected if gesture and gesture != current}
-        available = ["None", *[gesture for gesture in supported_gestures if gesture not in used_by_others]]
+        available = [gesture for gesture in supported_gestures if gesture not in used_by_others]
 
         combo.blockSignals(True)
         combo.clear()
-        combo.addItems(available)
-        idx = combo.findText(current)
+        combo.addItem("None", "")
+        for gesture_id in available:
+            combo.addItem(to_display_text(gesture_id), gesture_id)
+        idx = combo.findData(current)
         combo.setCurrentIndex(idx if idx >= 0 else 0)
         combo.blockSignals(False)
 
@@ -79,27 +89,27 @@ def collect_mapping_from_tables(
         action = action_item.data(QtCore.Qt.UserRole) if action_item else ""
         action = str(action).strip() if action else ""
         combo = app_table.cellWidget(row, 1)
-        gesture = combo.currentText().strip() if combo else ""
-        if action and gesture and gesture != "None":
+        gesture = _combo_gesture_id(combo)
+        if action and gesture:
             out[gesture] = action
 
     no_gui_combo = game_table.cellWidget(game_engine_row, 1)
-    no_gui_gesture = no_gui_combo.currentText().strip() if no_gui_combo else ""
-    if no_gui_gesture and no_gui_gesture != "None":
+    no_gui_gesture = _combo_gesture_id(no_gui_combo)
+    if no_gui_gesture:
         out[no_gui_gesture] = make_run_action(no_gui_game_engine_relative_path)
 
     for row in range(game_engine_row + 1, game_table.rowCount()):
         path = get_cell_path(game_table, row)
         combo = game_table.cellWidget(row, 1)
-        gesture = combo.currentText().strip() if combo else ""
-        if path and gesture and gesture != "None":
+        gesture = _combo_gesture_id(combo)
+        if path and gesture:
             out[gesture] = make_run_action(path)
 
     for row in range(file_table.rowCount()):
         path = get_cell_path(file_table, row)
         combo = file_table.cellWidget(row, 2)
-        gesture = combo.currentText().strip() if combo else ""
-        if path and gesture and gesture != "None":
+        gesture = _combo_gesture_id(combo)
+        if path and gesture:
             out[gesture] = make_run_action(path)
 
     return out

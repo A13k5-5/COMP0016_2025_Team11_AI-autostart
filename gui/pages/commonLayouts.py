@@ -1,6 +1,7 @@
 import os
 
 from PySide6 import QtCore, QtWidgets
+from myGestureRecognizer.gestureLabels import to_display_text
 
 
 def init_action_gesture_table(table: QtWidgets.QTableWidget) -> None:
@@ -19,11 +20,13 @@ def create_gesture_combo(
 ) -> QtWidgets.QComboBox:
     """Create a gesture combo with None + supported gestures and callback wiring."""
     combo = QtWidgets.QComboBox()
-    combo.addItem("None")
-    combo.addItems(supported_gestures)
-    idx = combo.findText(current_gesture)
+    combo.addItem("None", "")
+    for gesture_id in supported_gestures:
+        combo.addItem(to_display_text(gesture_id), gesture_id)
+
+    idx = combo.findData(current_gesture)
     combo.setCurrentIndex(idx if idx >= 0 else 0)
-    combo.currentTextChanged.connect(on_gesture_changed)
+    combo.currentIndexChanged.connect(lambda _: on_gesture_changed())
     return combo
 
 
