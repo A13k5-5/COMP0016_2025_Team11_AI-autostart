@@ -196,9 +196,12 @@ def save_mapping(
     """
     Persist the provided gesture-to-action mapping to JSON.
     """
+    normalized_game_paths = [str(p).strip() for p in (game_run_paths or []) if str(p).strip()]
+
     out = {g: str(mapping.get(g, "")).strip() for g in SUPPORTED_GESTURES}
     out[DYNAMIC_APPS_KEY] = list(dynamic_apps) if dynamic_apps else []
-    out[GAME_RUN_PATHS_KEY] = [str(p).strip() for p in (game_run_paths or []) if str(p).strip()]
+    out[GAME_RUN_PATHS_KEY] = normalized_game_paths
+    out[RUN_USES_CAMERA_KEY] = bool(normalized_game_paths)
     out[FILE_RUN_ENTRIES_KEY] = list(file_run_entries or [])
     out[CAMERA_VIEW_ENABLED_KEY] = bool(camera_view_enabled)
     out[PERSON_RECOGNITION_ENABLED_KEY] = bool(person_recognition_enabled)
