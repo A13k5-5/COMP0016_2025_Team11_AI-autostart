@@ -41,20 +41,22 @@ class CameraManager:
                 return
             self._handoff_active = True
 
-        thread = threading.Thread(target=self._handoff_worker, args=(path,), daemon=True)
+        thread = threading.Thread(target=self._handoff_worker, args=(path,), daemon=False)
         thread.start()
 
     def _handoff_worker(self, path: str) -> None:
         """
         Release webcam, wait for launched process exit, then resume capture.
         """
+        exe_path = r"C:\\Users\\teole\\AI-autostart\\gameEngine\\main.dist\\main.exe"
         try:
             if self._pre_stop_delay_s > 0:
                 time.sleep(self._pre_stop_delay_s)
             self._stop_capture()
             if self._post_stop_delay_s > 0:
                 time.sleep(self._post_stop_delay_s)
-            subprocess.run(["cmd", "/c", "start", "/wait", "", path], check=False)
+            process = subprocess.Popen([exe_path, path])
+            process.wait()
         finally:
             with self._handoff_lock:
                 self._handoff_active = False

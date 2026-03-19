@@ -181,7 +181,6 @@ class GestureController:
                     print(f"Run target not found: {launch_path}")
                     return
                 if self.run_uses_camera:
-                    os.startfile(launch_path)
                     self.cameraManager.handoff_to_process(launch_path)
                 else:
                     os.startfile(launch_path)
