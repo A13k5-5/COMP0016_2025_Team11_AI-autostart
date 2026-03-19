@@ -48,28 +48,15 @@ class GestureController:
         self.run_uses_camera = load_run_uses_camera()
         self._mapping_mtime = self._get_mapping_mtime()
 
-    def _rebuild_recogniser(self) -> None:
-        """
-        Create a fresh recognizer instance and rewire subscribers.
-        """
-        self.videoGestureRecogniser = VideoGestureRecogniser(
-            self,
-            show_camera_view=self.camera_view_enabled,
-            use_person_recognition=self.person_recognition_enabled,
-        )
-        self.powerManager = PowerManager(self.videoGestureRecogniser)
-        self.videoGestureRecogniser.add_subscriber(self.powerManager)
-        self.prevUpdate = None
-
     def _request_resume_after_handoff(self) -> None:
         """Signal that recognizer should be resumed after handoff completion."""
         self._resume_requested.set()
 
     def _resume_capture_after_handoff(self) -> None:
         """
-        Rebuild recognizer after external app exits.
+        Restart recognizer after external app exits.
         """
-        self._rebuild_recogniser()
+        self.videoGestureRecogniser.restart()
 
     def _project_root(self) -> str:
         """Return absolute path to the project root."""

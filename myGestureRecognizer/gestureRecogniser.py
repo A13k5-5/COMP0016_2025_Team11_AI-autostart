@@ -37,6 +37,11 @@ class VideoGestureRecogniser:
         self.isRunning = False
         if wait:
             self._stopped_event.wait(timeout=max(0.0, timeout))
+    
+    def restart(self):
+        print("Restarting Gesture Recogniser...")
+        self.isRunning = True
+        self.run()
 
     def update_subscribers(self, update):
         """
