@@ -32,11 +32,35 @@ class VideoGestureRecogniser:
         self.person_recognizer = PersonRecogniser() if self.use_person_recognition else None
         self.show_camera_view = bool(show_camera_view)
 
-    def stop(self, wait: bool = False, timeout: float = 3.0):
+    def wait_until_stopped(self, timeout: float = 3.0, poll_interval_s: float = 0.02) -> bool:
+        """
+        Block until the recognizer loop has fully stopped.
+
+        Returns:
+            True when run loop has exited within timeout, otherwise False.
+        """
+        timeout = max(0.0, float(timeout))
+        poll_interval_s = max(0.005, float(poll_interval_s))
+        deadline = time.time() + timeout
+
+        while True:
+            if self._stopped_event.is_set() and not self.isRunning:
+                return True
+
+            remaining = deadline - time.time()
+            if remaining <= 0:
+                break
+
+            self._stopped_event.wait(timeout=min(poll_interval_s, remaining))
+
+        return self._stopped_event.is_set() and not self.isRunning
+
+    def stop(self, wait: bool = False, timeout: float = 3.0) -> bool:
         print("Stopping Gesture Recogniser...")
         self.isRunning = False
         if wait:
-            self._stopped_event.wait(timeout=max(0.0, timeout))
+            return self.wait_until_stopped(timeout=max(0.0, timeout))
+        return self._stopped_event.is_set() and not self.isRunning
     
     def restart(self):
         print("Restarting Gesture Recogniser...")

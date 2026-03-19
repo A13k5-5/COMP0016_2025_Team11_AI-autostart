@@ -1,6 +1,6 @@
 import os
 import threading
-from time import time, sleep
+from time import time
 import AppOpener
 from myGestureRecognizer.gestureRecogniser import VideoGestureRecogniser
 from myGestureRecognizer.gestureLabels import EnumGesture
@@ -33,11 +33,12 @@ class GestureController:
         # power manager is added afterwards as a subscriber since it needs videoGestureRecogniser as an argument
         self.videoGestureRecogniser.add_subscriber(self.powerManager)
         self._resume_requested = threading.Event()
+        self._pending_handoff_path: str | None = None
         self.cameraManager = CameraManager(
-            stop_capture=lambda: self.videoGestureRecogniser.stop(wait=True),
+            stop_capture=self._stop_capture_for_handoff,
             resume_capture=self._request_resume_after_handoff,
             pre_stop_delay_s=0.2,
-            post_stop_delay_s=0.25,
+            post_stop_delay_s=3.25,
         )
 
         self.prevUpdate = None
@@ -51,6 +52,17 @@ class GestureController:
     def _request_resume_after_handoff(self) -> None:
         """Signal that recognizer should be resumed after handoff completion."""
         self._resume_requested.set()
+
+    def _stop_capture_for_handoff(self) -> bool:
+        """
+        Stop recognizer capture and return only after the loop has fully stopped.
+        """
+        self.videoGestureRecogniser.stop(wait=False)
+        if self.videoGestureRecogniser.wait_until_stopped(timeout=2.5):
+            return True
+
+        self.videoGestureRecogniser.stop(wait=False)
+        return self.videoGestureRecogniser.wait_until_stopped(timeout=1.5)
 
     def _resume_capture_after_handoff(self) -> None:
         """
@@ -174,7 +186,8 @@ class GestureController:
                     print(f"Run target not found: {launch_path}")
                     return
                 if self.run_uses_camera:
-                    self.cameraManager.handoff_to_process(launch_path)
+                    self._pending_handoff_path = launch_path
+                    self.videoGestureRecogniser.stop(wait=False)
                 else:
                     os.startfile(launch_path)
             return
@@ -186,8 +199,11 @@ class GestureController:
         while True:
             self.videoGestureRecogniser.run()
 
-            while self.cameraManager.is_handoff_active() and not self._resume_requested.is_set():
-                sleep(0.1)
+            if self._pending_handoff_path:
+                handoff_path = self._pending_handoff_path
+                self._pending_handoff_path = None
+                self.cameraManager.handoff_to_process(handoff_path)
+                continue
 
             if self._resume_requested.is_set():
                 self._resume_requested.clear()
