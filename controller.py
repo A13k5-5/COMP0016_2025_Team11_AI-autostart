@@ -1,16 +1,21 @@
 import os
+import threading
 from time import time
 import AppOpener
 from myGestureRecognizer.gestureRecogniser import VideoGestureRecogniser
+from myGestureRecognizer.gestureLabels import EnumGesture
 from gui.actions import (
+    MAPPING_PATH,
     load_mapping,
     load_run_uses_camera,
     load_camera_view_enabled,
+    load_person_recognition_enabled,
     is_run_action,
     get_run_path,
 )
 from powerManager import PowerManager
 from cameraManager import CameraManager
+from runtimeSignals import consume_recognizer_stop_request
 
 class GestureController:
     """
@@ -18,16 +23,22 @@ class GestureController:
     """
     def __init__(self):
         self.camera_view_enabled = load_camera_view_enabled()
+        self.person_recognition_enabled = load_person_recognition_enabled()
         self.videoGestureRecogniser: VideoGestureRecogniser = VideoGestureRecogniser(
             self,
             show_camera_view=self.camera_view_enabled,
+            use_person_recognition=self.person_recognition_enabled,
         )
         self.powerManager = PowerManager(self.videoGestureRecogniser)
         # power manager is added afterwards as a subscriber since it needs videoGestureRecogniser as an argument
         self.videoGestureRecogniser.add_subscriber(self.powerManager)
+        self._resume_requested = threading.Event()
+        self._pending_handoff_path: str | None = None
         self.cameraManager = CameraManager(
-            stop_capture=lambda: self.videoGestureRecogniser.stop(),
-            resume_capture=self._resume_capture_after_handoff,
+            stop_capture=self._stop_capture_for_handoff,
+            resume_capture=self._request_resume_after_handoff,
+            pre_stop_delay_s=0.2,
+            post_stop_delay_s=3.25,
         )
 
         self.prevUpdate = None
@@ -36,29 +47,53 @@ class GestureController:
 
         self.gesture_mapping = load_mapping()
         self.run_uses_camera = load_run_uses_camera()
+        self._mapping_mtime = self._get_mapping_mtime()
 
-    def _rebuild_recogniser(self) -> None:
+    def _request_resume_after_handoff(self) -> None:
+        """Signal that recognizer should be resumed after handoff completion."""
+        self._resume_requested.set()
+
+    def _stop_capture_for_handoff(self) -> bool:
         """
-        Create a fresh recognizer instance and rewire subscribers.
+        Stop recognizer capture and return only after the loop has fully stopped.
         """
-        self.videoGestureRecogniser = VideoGestureRecogniser(
-            self,
-            show_camera_view=self.camera_view_enabled,
-        )
-        self.powerManager = PowerManager(self.videoGestureRecogniser)
-        self.videoGestureRecogniser.add_subscriber(self.powerManager)
-        self.prevUpdate = None
+        self.videoGestureRecogniser.stop(wait=False)
+        if self.videoGestureRecogniser.wait_until_stopped(timeout=2.5):
+            return True
+
+        self.videoGestureRecogniser.stop(wait=False)
+        return self.videoGestureRecogniser.wait_until_stopped(timeout=1.5)
 
     def _resume_capture_after_handoff(self) -> None:
         """
-        Rebuild recognizer and resume capture after external app exits.
+        Restart recognizer after external app exits.
         """
-        self._rebuild_recogniser()
-        self.videoGestureRecogniser.run()
+        self.videoGestureRecogniser.restart()
 
     def _project_root(self) -> str:
         """Return absolute path to the project root."""
         return os.path.dirname(os.path.abspath(__file__))
+
+    def _get_mapping_mtime(self) -> float:
+        """Return gesture mapping file modified time (0.0 when unavailable)."""
+        try:
+            return os.path.getmtime(MAPPING_PATH)
+        except OSError:
+            return 0.0
+
+    def _reload_runtime_settings_if_needed(self) -> None:
+        """Hot-reload runtime settings when gesture mapping file changes."""
+        current_mtime = self._get_mapping_mtime()
+        if current_mtime <= self._mapping_mtime:
+            return
+
+        self._mapping_mtime = current_mtime
+        self.gesture_mapping = load_mapping()
+        self.run_uses_camera = load_run_uses_camera()
+        self.camera_view_enabled = load_camera_view_enabled()
+        self.person_recognition_enabled = load_person_recognition_enabled()
+        self.videoGestureRecogniser.show_camera_view = self.camera_view_enabled
+        self.videoGestureRecogniser.use_person_recognition = self.person_recognition_enabled
 
     def _resolve_launch_path(self, path: str) -> str:
         """
@@ -78,6 +113,11 @@ class GestureController:
         Args:
             update: Detected gesture name, or None when no gesture is detected.
         """
+        self._reload_runtime_settings_if_needed()
+        if consume_recognizer_stop_request():
+            self.videoGestureRecogniser.stop()
+            return
+
         now = time()
 
         # no gesture detected
@@ -92,7 +132,7 @@ class GestureController:
         self.last_gesture_detected_at = now
 
         # reserved for low-power mode handling in PowerManager
-        if update == "Open_Palm":
+        if update == EnumGesture.OPEN_PALM.value:
             self.prevUpdate = update
             return
 
@@ -146,13 +186,28 @@ class GestureController:
                     print(f"Run target not found: {launch_path}")
                     return
                 if self.run_uses_camera:
-                    self.cameraManager.handoff_to_process(launch_path)
+                    self._pending_handoff_path = launch_path
+                    self.videoGestureRecogniser.stop(wait=False)
                 else:
                     os.startfile(launch_path)
             return
 
     def run(self):
         """
-        Start the underlying video gesture recognizer loop.
+        Start recognizer loop and handle handoff-triggered restarts in this thread.
         """
-        self.videoGestureRecogniser.run()
+        while True:
+            self.videoGestureRecogniser.run()
+
+            if self._pending_handoff_path:
+                handoff_path = self._pending_handoff_path
+                self._pending_handoff_path = None
+                self.cameraManager.handoff_to_process(handoff_path)
+                continue
+
+            if self._resume_requested.is_set():
+                self._resume_requested.clear()
+                self._resume_capture_after_handoff()
+                continue
+
+            break

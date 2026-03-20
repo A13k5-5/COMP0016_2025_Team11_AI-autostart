@@ -1,5 +1,6 @@
 from config import open_palm_hold_seconds, inactivity_timeout_seconds
 from time import time
+from myGestureRecognizer.gestureLabels import EnumGesture
 
 class PowerManager:
     """
@@ -33,7 +34,7 @@ class PowerManager:
         self.last_gesture_time = now
 
         # open palm must be held continuously to deactivate LPM
-        if update == "Open_Palm":
+        if update in {EnumGesture.OPEN_PALM.value, "Open_Palm"}:
             if self.open_palm_start_time is None:
                 self.open_palm_start_time = now
 

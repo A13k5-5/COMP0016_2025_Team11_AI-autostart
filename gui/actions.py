@@ -1,6 +1,10 @@
 import json
 import os
 import importlib
+from myGestureRecognizer.gestureLabels import (
+    EnumGesture,
+    SUPPORTED_GESTURES as CANONICAL_SUPPORTED_GESTURES,
+)
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 MAPPING_PATH = os.path.join(BASE_DIR, "gui", "gesture_mapping.json")
@@ -10,17 +14,10 @@ SUPPORTED_ACTIONS = [
     "stop",
 ]
 
-SUPPORTED_GESTURES = [
-    "Pointing_Up",
-    "Closed_Fist",
-    "Victory",
-    "ILoveYou",
-    "Thumb_Up",
-    "Thumb_Down",
-]
+SUPPORTED_GESTURES = list(CANONICAL_SUPPORTED_GESTURES)
 
 # reserved for LPM activation
-RESERVED_GESTURES = {"Open_Palm"}
+RESERVED_GESTURES = {EnumGesture.OPEN_PALM.value}
 
 # Prefix used for user-defined executable actions stored in the mapping file.
 RUN_PREFIX = "run:"
@@ -30,6 +27,7 @@ GAME_RUN_PATHS_KEY = "game_run_paths"
 FILE_RUN_ENTRIES_KEY = "file_run_entries"
 DYNAMIC_APPS_KEY = "dynamic_apps"
 CAMERA_VIEW_ENABLED_KEY = "camera_view_enabled"
+PERSON_RECOGNITION_ENABLED_KEY = "person_recognition_enabled"
 
 def is_run_action(action: str) -> bool:
     """Return True if *action* represents a user-chosen file to open."""
@@ -110,6 +108,27 @@ def save_camera_view_enabled(enabled: bool, path: str = MAPPING_PATH) -> None:
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
+
+def load_person_recognition_enabled(path: str = MAPPING_PATH) -> bool:
+    """
+    Load whether person recognition is enabled.
+    Defaults to True when key is missing to preserve existing behavior.
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return bool(data.get(PERSON_RECOGNITION_ENABLED_KEY, True))
+
+
+def save_person_recognition_enabled(enabled: bool, path: str = MAPPING_PATH) -> None:
+    """
+    Persist the person-recognition toggle.
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    data[PERSON_RECOGNITION_ENABLED_KEY] = bool(enabled)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
 def load_dynamic_apps(path: str = MAPPING_PATH) -> list:
     """
     Load the ordered list of dynamically added app names from the mapping file.
@@ -169,15 +188,20 @@ def save_mapping(
     file_run_entries: list = None,
     dynamic_apps: list = None,
     camera_view_enabled: bool = False,
+    person_recognition_enabled: bool = True,
 ) -> None:
     """
     Persist the provided gesture-to-action mapping to JSON.
     """
+    normalized_game_paths = [str(p).strip() for p in (game_run_paths or []) if str(p).strip()]
+
     out = {g: str(mapping.get(g, "")).strip() for g in SUPPORTED_GESTURES}
     out[DYNAMIC_APPS_KEY] = list(dynamic_apps) if dynamic_apps else []
-    out[GAME_RUN_PATHS_KEY] = [str(p).strip() for p in (game_run_paths or []) if str(p).strip()]
+    out[GAME_RUN_PATHS_KEY] = normalized_game_paths
+    out[RUN_USES_CAMERA_KEY] = bool(normalized_game_paths)
     out[FILE_RUN_ENTRIES_KEY] = list(file_run_entries or [])
     out[CAMERA_VIEW_ENABLED_KEY] = bool(camera_view_enabled)
+    out[PERSON_RECOGNITION_ENABLED_KEY] = bool(person_recognition_enabled)
 
     with open(path, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2)
