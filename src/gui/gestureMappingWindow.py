@@ -1,6 +1,6 @@
 from PySide6 import QtWidgets
 
-from gui.actions import (
+from src.gui.actions import (
     SUPPORTED_GESTURES,
     SUPPORTED_ACTIONS,
     load_mapping,
@@ -15,12 +15,12 @@ from gui.actions import (
     save_mapping,
     make_run_action,
 )
-from gui.mappingState import build_action_to_gesture, ensure_file_entries, merged_dynamic_apps
-from gui.pages.appsPage import AppsPage
-from gui.pages.filesPage import FilesPage
-from gui.pages.gamesPage import GamesPage
-from gui.pages.referencePage import ReferencePage
-from gui.tableUtils import (
+from src.gui.mappingState import build_action_to_gesture, ensure_file_entries, merged_dynamic_apps
+from src.gui.pages.appsPage import AppsPage
+from src.gui.pages.filesPage import FilesPage
+from src.gui.pages.gamesPage import GamesPage
+from src.gui.pages.referencePage import ReferencePage
+from src.gui.tableUtils import (
     collect_dynamic_apps,
     collect_file_run_entries,
     collect_game_run_paths,

@@ -2,7 +2,7 @@ import os
 from collections.abc import Callable
 
 from PySide6 import QtCore, QtWidgets
-from gui.pages.commonLayouts import (
+from src.gui.pages.commonLayouts import (
     build_path_browse_cell,
     create_gesture_combo,
     selected_rows,

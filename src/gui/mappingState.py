@@ -1,4 +1,4 @@
-from gui.actions import get_run_path, is_run_action
+from src.gui.actions import get_run_path, is_run_action
 
 
 def build_action_to_gesture(mapping: dict) -> dict:

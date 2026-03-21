@@ -1,5 +1,5 @@
 from PySide6 import QtCore, QtWidgets
-from myGestureRecognizer.gestureLabels import to_display_text
+from src.myGestureRecognizer.gestureLabels import to_display_text
 
 
 def _combo_gesture_id(combo: QtWidgets.QComboBox | None) -> str:

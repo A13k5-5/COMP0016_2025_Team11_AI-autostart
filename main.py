@@ -1,4 +1,4 @@
-from controller import GestureController
+from src.controller import GestureController
 
 if __name__ == "__main__":
     controller: GestureController = GestureController()

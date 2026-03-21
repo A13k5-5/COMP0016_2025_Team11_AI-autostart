@@ -1,7 +1,7 @@
 import json
 import os
 import importlib
-from myGestureRecognizer.gestureLabels import (
+from src.myGestureRecognizer.gestureLabels import (
     EnumGesture,
     SUPPORTED_GESTURES as CANONICAL_SUPPORTED_GESTURES,
 )
