@@ -2,37 +2,23 @@ import pystray
 from PIL import Image
 import sys
 import os
-import subprocess
 
+from PySide6.QtWidgets import QApplication
+
+from src.controller.controller import GestureController
 from src.gui.actions import update_app_data
+from src.gui.gestureMappingWindow import MappingWindow
 from src.systemTrayDesktopApp.runtimeSignals import request_recognizer_stop
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
-_recognizer_process: subprocess.Popen | None = None
-
-def _launch_script(script_name: str) -> None:
-    """Launch a project script in a separate process."""
-    script_path = os.path.join(PROJECT_ROOT, script_name)
-    subprocess.Popen([sys.executable, script_path], cwd=PROJECT_ROOT)
-
-
-def _launch_recognizer_once() -> None:
-    """Launch recognizer process only when it is not already running."""
-    global _recognizer_process
-    if _recognizer_process is not None and _recognizer_process.poll() is None:
-        print("Gesture monitoring is already running.")
-        return
-
-    script_path = os.path.join(PROJECT_ROOT, "run_gesture_recogniser.py")
-    _recognizer_process = subprocess.Popen([sys.executable, script_path], cwd=PROJECT_ROOT)
 
 def exit_app(icon, item):
     icon.stop()
 
 def gesture_monitoring(icon, item):
-    _launch_recognizer_once()
-
+    controller: GestureController = GestureController()
+    controller.run()
 
 def stop_gesture_monitoring(icon, item):
     global _recognizer_process
@@ -41,7 +27,10 @@ def stop_gesture_monitoring(icon, item):
         _recognizer_process = None
 
 def mapping_window(icon, item):
-    _launch_script("runGUI.py")
+    app = QApplication(sys.argv)
+    w = MappingWindow()
+    w.show()
+    app.exec()
 
 def main() -> None:
     """
