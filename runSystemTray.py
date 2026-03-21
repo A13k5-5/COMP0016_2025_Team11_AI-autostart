@@ -5,11 +5,8 @@
 # nuitka-project: --include-qt-plugins=qml
 
 # --------------- FOR OPENVINO ----------------
-# nuitka-project: --include-package=openvino_genai
-# nuitka-project: --include-package-data=openvino_genai
-
-# nuitka-project: --include-package=openvino_tokenizers
-# nuitka-project: --include-package-data=openvino_tokenizers
+# nuitka-project: --include-package=openvino
+# nuitka-project: --include-package-data=openvino
 
 # recognizer file for mediapipe
 # nuitka-project: --include-data-files={MAIN_DIRECTORY}/src/systemTrayDesktopApp/icon.ico=src/systemTrayDesktopApp/icon.ico
