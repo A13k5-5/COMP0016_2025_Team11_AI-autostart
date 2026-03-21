@@ -1,7 +1,4 @@
-.venv/
-.venv2/
-.venv310/
-.venv_alex/
+.venv*/
 **/__pycache__/**
 .idea
-gameEngine/main.dist/
+*.dist/

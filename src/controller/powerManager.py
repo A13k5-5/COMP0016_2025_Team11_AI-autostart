@@ -1,6 +1,6 @@
-from config import open_palm_hold_seconds, inactivity_timeout_seconds
+from src.config import OPEN_PALM_HOLD_SECONDS, INACTIVITY_TIMEOUT_SECONDS
 from time import time
-from myGestureRecognizer.gestureLabels import EnumGesture
+from src.video_recogniser.gesture_recogniser.gestureLabels import EnumGesture
 
 class PowerManager:
     """
@@ -54,7 +54,7 @@ class PowerManager:
         if (
             self.videoGestureRecogniser.is_low_power_mode()
             and self.open_palm_start_time is not None
-            and (now - self.open_palm_start_time) >= open_palm_hold_seconds
+            and (now - self.open_palm_start_time) >= OPEN_PALM_HOLD_SECONDS
         ):
             self.deactivate_LPM()
 
@@ -65,5 +65,5 @@ class PowerManager:
         """
         Switch to low-power mode after prolonged gesture inactivity.
         """
-        if not self.videoGestureRecogniser.is_low_power_mode() and (now - self.last_gesture_time >= inactivity_timeout_seconds):
+        if not self.videoGestureRecogniser.is_low_power_mode() and (now - self.last_gesture_time >= INACTIVITY_TIMEOUT_SECONDS):
             self.activate_LPM()

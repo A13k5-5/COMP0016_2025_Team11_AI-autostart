@@ -1,7 +1,7 @@
 import os
 
 from PySide6 import QtCore, QtWidgets
-from myGestureRecognizer.gestureLabels import to_display_text
+from src.video_recogniser.gesture_recogniser.gestureLabels import to_display_text
 
 
 def init_action_gesture_table(table: QtWidgets.QTableWidget) -> None:

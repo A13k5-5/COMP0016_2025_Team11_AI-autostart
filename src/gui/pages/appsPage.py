@@ -2,9 +2,9 @@ from collections.abc import Callable
 
 from PySide6 import QtCore, QtWidgets
 
-from gui.AppDialog import AppDialog
-from gui.actions import load_app_data, update_app_data
-from gui.pages.commonLayouts import (
+from src.gui.AppDialog import AppDialog
+from src.gui.actions import load_app_data, update_app_data
+from src.gui.pages.commonLayouts import (
     create_gesture_combo,
     init_action_gesture_table,
     selected_rows,

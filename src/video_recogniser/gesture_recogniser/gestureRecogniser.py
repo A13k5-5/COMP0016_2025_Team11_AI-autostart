@@ -7,11 +7,11 @@ import mediapipe as mp
 from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import GestureRecognizer, RunningMode, GestureRecognizerOptions, GestureRecognizerResult
 
-from .fps import FPS
+from src.video_recogniser.gesture_recogniser.fps_util import FPS
 from .gestureLabels import EnumGesture
-from .haloEffect import draw_halo_effect
+from src.video_recogniser.person_recogniser.haloEffect import draw_halo_effect
 from .videoCaptureManager import video_capture_manager
-from .personRecogniser import PersonRecogniser
+from src.video_recogniser.person_recogniser.personRecogniser import PersonRecogniser
 
 WINDOW_NAME = "Hand Detection"
 

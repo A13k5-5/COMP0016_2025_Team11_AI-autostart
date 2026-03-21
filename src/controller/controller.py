@@ -2,9 +2,9 @@ import os
 import threading
 from time import time
 import AppOpener
-from myGestureRecognizer.gestureRecogniser import VideoGestureRecogniser
-from myGestureRecognizer.gestureLabels import EnumGesture
-from gui.actions import (
+from src.video_recogniser.gesture_recogniser.gestureRecogniser import VideoGestureRecogniser
+from src.video_recogniser.gesture_recogniser.gestureLabels import EnumGesture
+from src.gui.actions import (
     MAPPING_PATH,
     load_mapping,
     load_run_uses_camera,
@@ -13,9 +13,9 @@ from gui.actions import (
     is_run_action,
     get_run_path,
 )
-from powerManager import PowerManager
-from cameraManager import CameraManager
-from runtimeSignals import consume_recognizer_stop_request
+from src.controller.powerManager import PowerManager
+from src.controller.cameraManager import CameraManager
+from src.systemTrayDesktopApp.runtimeSignals import consume_recognizer_stop_request
 
 class GestureController:
     """
@@ -71,8 +71,8 @@ class GestureController:
         self.videoGestureRecogniser.restart()
 
     def _project_root(self) -> str:
-        """Return absolute path to the project root."""
-        return os.path.dirname(os.path.abspath(__file__))
+        """Return absolute path to the `src` directory."""
+        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     def _get_mapping_mtime(self) -> float:
         """Return gesture mapping file modified time (0.0 when unavailable)."""

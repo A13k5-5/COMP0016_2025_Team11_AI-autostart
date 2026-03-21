@@ -1,10 +1,14 @@
 from openvino.runtime import Core
 import numpy as np
 import cv2
-from .fps import FPS
+from src.video_recogniser.gesture_recogniser.fps_util import FPS
+from pathlib import Path
+
+MODEL_PATH = Path(__file__).parent / "intel" / "person-detection-0200" / "FP16" / "person-detection-0200.xml"
 
 class PersonRecogniser:
-    def __init__(self, model_path: str = "myGestureRecognizer/intel/person-detection-0200/FP16/person-detection-0200.xml"):
+    def __init__(self, model_path: Path | str = MODEL_PATH):
+
         # Initialize OpenVINO runtime and load the person detection model
         self.ie = Core()
         self.model = self.ie.read_model(model=model_path)
