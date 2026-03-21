@@ -24,7 +24,7 @@ def _launch_recognizer_once() -> None:
         print("Gesture monitoring is already running.")
         return
 
-    script_path = os.path.join(PROJECT_ROOT, "main.py")
+    script_path = os.path.join(PROJECT_ROOT, "run_gesture_recogniser.py")
     _recognizer_process = subprocess.Popen([sys.executable, script_path], cwd=PROJECT_ROOT)
 
 def exit_app(icon, item):
