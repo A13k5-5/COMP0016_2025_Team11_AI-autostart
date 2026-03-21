@@ -1,2 +1,2 @@
-open_palm_hold_seconds = 2
-inactivity_timeout_seconds = 30
+OPEN_PALM_HOLD_SECONDS = 2
+INACTIVITY_TIMEOUT_SECONDS = 30

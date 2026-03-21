@@ -5,7 +5,7 @@ import os
 import subprocess
 
 from src.gui.actions import update_app_data
-from src.runtimeSignals import request_recognizer_stop
+from src.systemTrayDesktopApp.runtimeSignals import request_recognizer_stop
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
