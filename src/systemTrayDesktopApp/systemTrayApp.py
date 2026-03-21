@@ -2,66 +2,84 @@ import pystray
 from PIL import Image
 import sys
 import os
+import subprocess
 
-from PySide6.QtWidgets import QApplication
+from multiprocessing import Process
 
-from src.controller.controller import GestureController
-from src.gui import actions
-from src.gui.gestureMappingWindow import MappingWindow
+from src.gui.actions import update_app_data
+from src.systemTrayDesktopApp.runtimeSignals import request_recognizer_stop
+from src.subprocesses.run_gesture_recogniser import run_gesture_recogniser
+from src.subprocesses.runGUI import run_gui
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
 
-class App:
-    def __init__(self):
-        self.controller: GestureController = GestureController()
-        self.system_tray_icon  = self._build_system_tray_icon()
+_recognizer_process: Process | None = None
+_gui_process: Process | None = None
 
-    def run(self):
-        self.system_tray_icon.run()
+def _launch_script(script_name: str) -> None:
+    """Launch a project script in a separate process."""
+    script_path = os.path.join(PROJECT_ROOT, script_name)
+    subprocess.Popen([sys.executable, script_path], cwd=PROJECT_ROOT)
 
-    def exit_app(self):
-        self.system_tray_icon.stop()
 
-    def start_gesture_monitoring(self):
-        self.controller.run()
+def _launch_recognizer_once() -> None:
+    """Launch recognizer process only when it is not already running."""
+    global _recognizer_process
+    if _recognizer_process is not None and _recognizer_process.is_alive():
+        print("Gesture monitoring is already running.")
+        return
 
-    def _build_system_tray_icon(self):
-        image = Image.open(os.path.join(BASE_DIR, "icon.png"))
+    _recognizer_process = Process(target=run_gesture_recogniser, daemon=False)
+    _recognizer_process.start()
 
-        menu = pystray.Menu(
-            pystray.MenuItem("Start gesture monitoring", self.start_gesture_monitoring),
-            # pystray.MenuItem("Stop gesture monitoring", self.stop_gesture_monitoring),
-            # pystray.MenuItem("Open settings", self.mapping_window),
-            pystray.MenuItem("Exit", self.exit_app)
-        )
+def exit_app(icon, item):
+    icon.stop()
 
-        icon = pystray.Icon(
-            name="AI-Autostart",
-            icon=image,
-            title="AI Autostart",
-            menu=menu
-        )
+def gesture_monitoring(icon, item):
+    _launch_recognizer_once()
 
-        return icon
-
+def stop_gesture_monitoring(icon, item):
+    global _recognizer_process
+    request_recognizer_stop()
+    if _recognizer_process is not None and _recognizer_process.poll() is not None:
+        _recognizer_process = None
 
 def mapping_window(icon, item):
-    app = QApplication(sys.argv)
-    w = MappingWindow()
-    w.show()
-    app.exec()
+    global _gui_process
+    if _gui_process is not None and _gui_process.is_alive():
+        print("Settings window is already open.")
+        return
+    _gui_process = Process(target=run_gui, daemon=False)
+    _gui_process.start()
 
 def main() -> None:
     """
     Start the system tray icon application.
     """
     try:
-        actions.update_app_data()
+        update_app_data()
     except Exception as exc:
         print(f"Warning: failed to refresh app list: {exc}")
+    
+    image = Image.open(os.path.join(BASE_DIR, "icon.png"))
+
+    menu = pystray.Menu(
+        pystray.MenuItem("Start gesture monitoring", gesture_monitoring),
+        pystray.MenuItem("Stop gesture monitoring", stop_gesture_monitoring),
+        pystray.MenuItem("Open settings", mapping_window),
+        pystray.MenuItem("Exit", exit_app)
+    )
+
+    icon = pystray.Icon(
+        name="AI-Autostart",
+        icon=image,
+        title="AI Autostart",
+        menu=menu
+    )
+
+    icon.run()
 
 
 if __name__ == "__main__":
-    app = App()
-    app.run()
+    main()
