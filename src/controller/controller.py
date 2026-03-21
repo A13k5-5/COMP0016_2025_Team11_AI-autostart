@@ -71,8 +71,8 @@ class GestureController:
         self.videoGestureRecogniser.restart()
 
     def _project_root(self) -> str:
-        """Return absolute path to the project root."""
-        return os.path.dirname(os.path.abspath(__file__))
+        """Return absolute path to the `src` directory."""
+        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     def _get_mapping_mtime(self) -> float:
         """Return gesture mapping file modified time (0.0 when unavailable)."""
