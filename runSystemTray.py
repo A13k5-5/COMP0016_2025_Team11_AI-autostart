@@ -11,6 +11,7 @@
 # recognizer file for mediapipe
 # nuitka-project: --include-data-files={MAIN_DIRECTORY}/src/video_recogniser/gesture_recogniser/gesture_recognizer.task=src/video_recogniser/gesture_recogniser/gesture_recognizer.task
 # nuitka-project: --include-data-files={MAIN_DIRECTORY}/src/systemTrayDesktopApp/icon.ico=src/systemTrayDesktopApp/icon.ico
+# nuitka-project: --include-data-files={MAIN_DIRECTORY}/src/systemTrayDesktopApp/icon.png=src/systemTrayDesktopApp/icon.png
 
 from src.systemTrayDesktopApp.systemTrayApp import SystemTrayApp
 
