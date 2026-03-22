@@ -55,7 +55,7 @@ class SystemTrayApp:
         except Exception as exc:
             print(f"Warning: failed to refresh app list: {exc}")
 
-        image = Image.open(os.path.join(BASE_DIR, "icon.png"))
+        image = Image.open(os.path.join(BASE_DIR, "../../icon.png"))
 
         menu = pystray.Menu(
             pystray.MenuItem("Start gesture monitoring", self.gesture_monitoring),
