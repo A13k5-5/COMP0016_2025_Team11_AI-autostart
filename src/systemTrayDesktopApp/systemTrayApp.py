@@ -42,7 +42,7 @@ def gesture_monitoring(icon, item):
 def stop_gesture_monitoring(icon, item):
     global _recognizer_process
     request_recognizer_stop()
-    if _recognizer_process is not None and _recognizer_process.poll() is not None:
+    if _recognizer_process is not None and _recognizer_process.is_alive():
         _recognizer_process = None
 
 def mapping_window(icon, item):
