@@ -1,8 +1,8 @@
 import time
 import threading
+from pathlib import Path
 
 import cv2
-import os
 import mediapipe as mp
 from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import GestureRecognizer, RunningMode, GestureRecognizerOptions, GestureRecognizerResult
@@ -20,19 +20,19 @@ class VideoGestureRecogniser:
         """
         Initialize recognizer resources and subscriber list.
         """
-        self.model_path = os.path.join(os.path.dirname(__file__), "gesture_recognizer.task")
+        self.model_path = Path(__file__).parent / "gesture_recognizer.task"
         # default value of 30 fps
         self.fps_manager = FPS(30)
         self._is_low_power_mode = False
-        self.subscribers = [controller]
+        self.subscribers = [controller] if controller is not None else []
         self.isRunning = True
         self._stopped_event = threading.Event()
         self._stopped_event.set()
         # self.use_person_recognition = bool(use_person_recognition)
-        self.use_person_recognition = False
+        self.use_person_recognition: bool = False
         # self.person_recognizer = PersonRecogniser() if self.use_person_recognition else None
         self.person_recognizer = None
-        self.show_camera_view = bool(show_camera_view)
+        self.show_camera_view: bool = show_camera_view
 
     def wait_until_stopped(self, timeout: float = 3.0, poll_interval_s: float = 0.02) -> bool:
         """
@@ -130,16 +130,14 @@ class VideoGestureRecogniser:
             self.update_subscribers(None)
             return
 
+        print(gesture.value)
         self.update_subscribers(gesture.value)
     
     def _capture_frame(self, cap):
         """
         Capture a frame from the camera, ensure it's valid and skip frames as necessary.
         """
-        try:
-            ret, frame = cap.read()
-        except cv2.error:
-            return None
+        ret, frame = cap.read()
         if not ret or frame is None or frame.size == 0 or not self.fps_manager.is_time_for_next_frame():
             return None
         self.fps_manager.update()
@@ -183,7 +181,7 @@ class VideoGestureRecogniser:
         """
         Main loop: capture video, detect person, crop frame, and recognize gestures.
         """
-        self._stopped_event.clear()
+        # self._stopped_event.clear()
         try:
             with video_capture_manager() as cap, self._create_recognizer() as recognizer:
                 self.fps_manager.start()
@@ -197,6 +195,6 @@ class VideoGestureRecogniser:
                     self._send_to_recogniser(cropped_frame, recognizer)
                     self._display_frame(frame)
 
-                cv2.destroyAllWindows()
         finally:
-            self._stopped_event.set()
+            pass
+            # self._stopped_event.set()

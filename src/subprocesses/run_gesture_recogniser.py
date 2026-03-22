@@ -1,6 +1,7 @@
 from src.controller.controller import GestureController
 
 def run_gesture_recogniser():
+    print("Starting Gesture Recogniser...")
     controller: GestureController = GestureController()
     controller.run()
 

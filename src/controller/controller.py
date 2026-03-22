@@ -192,22 +192,13 @@ class GestureController:
                     os.startfile(launch_path)
             return
 
+    def stop(self):
+        """Stop the recognizer loop."""
+        self.videoGestureRecogniser.stop()
+
     def run(self):
         """
         Start recognizer loop and handle handoff-triggered restarts in this thread.
         """
-        while True:
-            self.videoGestureRecogniser.run()
-
-            if self._pending_handoff_path:
-                handoff_path = self._pending_handoff_path
-                self._pending_handoff_path = None
-                self.cameraManager.handoff_to_process(handoff_path)
-                continue
-
-            if self._resume_requested.is_set():
-                self._resume_requested.clear()
-                self._resume_capture_after_handoff()
-                continue
-
-            break
+        self.videoGestureRecogniser.run()
+        print("Gesture recognizer loop has fully stopped.")

@@ -1,6 +1,7 @@
 import pystray
 from PIL import Image
 import os
+from pathlib import Path
 
 from multiprocessing import Process
 
@@ -25,7 +26,7 @@ class SystemTrayApp:
             print("Gesture monitoring is already running.")
             return
 
-        self._recognizer_process = Process(target=run_gesture_recogniser, daemon=False)
+        self._recognizer_process = Process(target=run_gesture_recogniser, daemon=True)
         self._recognizer_process.start()
 
     def exit_app(self, icon, item):
@@ -55,7 +56,7 @@ class SystemTrayApp:
         # except Exception as exc:
         #     print(f"Warning: failed to refresh app list: {exc}")
 
-        image = Image.open(os.path.join(BASE_DIR, "../../icon.png"))
+        image = Image.open(Path(__file__).parent / "icon.png")
 
         menu = pystray.Menu(
             pystray.MenuItem("Start gesture monitoring", self.gesture_monitoring),
