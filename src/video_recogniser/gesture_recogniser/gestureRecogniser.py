@@ -58,12 +58,8 @@ class VideoGestureRecogniser:
         return self._stopped_event.is_set() and not self.isRunning
 
     def stop(self, wait: bool = False, timeout: float = 3.0) -> bool:
-        print("Stopping Gesture Recogniser...")
         self.isRunning = False
-        if wait:
-            return self.wait_until_stopped(timeout=max(0.0, timeout))
-        return self._stopped_event.is_set() and not self.isRunning
-    
+
     def restart(self):
         print("Restarting Gesture Recogniser...")
         self.isRunning = True
@@ -182,6 +178,7 @@ class VideoGestureRecogniser:
         Main loop: capture video, detect person, crop frame, and recognize gestures.
         """
         # self._stopped_event.clear()
+        self.isRunning = True
         try:
             with video_capture_manager() as cap, self._create_recognizer() as recognizer:
                 self.fps_manager.start()

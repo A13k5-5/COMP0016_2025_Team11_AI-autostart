@@ -11,15 +11,20 @@ from src.controller.controller import GestureController
 class SystemTrayApp:
     def __init__(self):
         self._controller: GestureController = GestureController()
-        self._recogniser_thread: Thread = Thread(target=self._controller.run)
+        self._recogniser_thread: Thread | None = None
 
     def run_controller_in_thread(self):
-        if self._recogniser_thread.is_alive():
+        if self._recogniser_thread and self._recogniser_thread.is_alive():
             return
+        self._recogniser_thread = Thread(target=self._controller.run)
         self._recogniser_thread.start()
 
     def exit_app(self, icon, item):
         icon.stop()
+
+    def test_turn_off_on(self):
+        self._controller.run()
+        self._controller.run()
 
     def main(self) -> None:
         """
