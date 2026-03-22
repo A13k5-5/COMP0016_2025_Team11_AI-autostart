@@ -9,9 +9,9 @@ from mediapipe.tasks.python.vision import GestureRecognizer, RunningMode, Gestur
 
 from src.video_recogniser.gesture_recogniser.fps_util import FPS
 from .gestureLabels import EnumGesture
-from src.video_recogniser.person_recogniser.haloEffect import draw_halo_effect
+# from src.video_recogniser.person_recogniser.haloEffect import draw_halo_effect
 from .videoCaptureManager import video_capture_manager
-from src.video_recogniser.person_recogniser.personRecogniser import PersonRecogniser
+# from src.video_recogniser.person_recogniser.personRecogniser import PersonRecogniser
 
 WINDOW_NAME = "Hand Detection"
 
@@ -28,8 +28,10 @@ class VideoGestureRecogniser:
         self.isRunning = True
         self._stopped_event = threading.Event()
         self._stopped_event.set()
-        self.use_person_recognition = bool(use_person_recognition)
-        self.person_recognizer = PersonRecogniser() if self.use_person_recognition else None
+        # self.use_person_recognition = bool(use_person_recognition)
+        self.use_person_recognition = False
+        # self.person_recognizer = PersonRecogniser() if self.use_person_recognition else None
+        self.person_recognizer = None
         self.show_camera_view = bool(show_camera_view)
 
     def wait_until_stopped(self, timeout: float = 3.0, poll_interval_s: float = 0.02) -> bool:
@@ -150,8 +152,8 @@ class VideoGestureRecogniser:
         if not self.use_person_recognition:
             return frame
 
-        if self.person_recognizer is None:
-            self.person_recognizer = PersonRecogniser()
+        # if self.person_recognizer is None:
+        #     self.person_recognizer = PersonRecogniser()
 
         person_box = self.person_recognizer.detect_main_person(frame)
         if person_box:
@@ -160,7 +162,7 @@ class VideoGestureRecogniser:
             left = max(0, left)
             bottom = min(frame.shape[0], bottom)
             right = min(frame.shape[1], right)
-            draw_halo_effect(frame, (top, left, bottom, right))
+            # draw_halo_effect(frame, (top, left, bottom, right))
             cropped_frame = frame[top:bottom, left:right]
             if cropped_frame.size == 0:
                 return frame
