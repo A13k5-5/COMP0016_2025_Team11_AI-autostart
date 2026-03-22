@@ -34,7 +34,7 @@ class SystemTrayApp:
 
     def exit_app(self):
         self._controller.stop()
-
+        self.app.quit()
 
     def main(self) -> None:
         """
@@ -64,6 +64,10 @@ class SystemTrayApp:
         action3 = QAction("Open mapping window")
         action3.triggered.connect(mapping_window.show)
         menu.addAction(action3)
+
+        action4 = QAction("Exit")
+        action4.triggered.connect(self.exit_app)
+        menu.addAction(action4)
 
         tray.setContextMenu(menu)
         self.app.exec()
