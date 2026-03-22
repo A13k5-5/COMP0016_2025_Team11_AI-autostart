@@ -20,11 +20,8 @@ class SystemTrayApp:
         self._recogniser_thread.start()
 
     def exit_app(self, icon, item):
+        self._controller.stop()
         icon.stop()
-
-    def test_turn_off_on(self):
-        self._controller.run()
-        self._controller.run()
 
     def main(self) -> None:
         """
@@ -33,7 +30,6 @@ class SystemTrayApp:
         image = Image.open(Path(__file__).parent / "icon.png")
 
         menu = pystray.Menu(
-            # pystray.MenuItem("Do something 1", self.process1),
             pystray.MenuItem("Start recognition", self.run_controller_in_thread),
             pystray.MenuItem("Stop recognition", self._controller.stop),
             pystray.MenuItem("Exit", self.exit_app)

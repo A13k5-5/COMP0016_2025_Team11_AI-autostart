@@ -26,44 +26,14 @@ class VideoGestureRecogniser:
         self._is_low_power_mode = False
         self.subscribers = [controller] if controller is not None else []
         self.isRunning = True
-        self._stopped_event = threading.Event()
-        self._stopped_event.set()
         # self.use_person_recognition = bool(use_person_recognition)
         self.use_person_recognition: bool = False
         # self.person_recognizer = PersonRecogniser() if self.use_person_recognition else None
         self.person_recognizer = None
         self.show_camera_view: bool = show_camera_view
 
-    def wait_until_stopped(self, timeout: float = 3.0, poll_interval_s: float = 0.02) -> bool:
-        """
-        Block until the recognizer loop has fully stopped.
-
-        Returns:
-            True when run loop has exited within timeout, otherwise False.
-        """
-        timeout = max(0.0, float(timeout))
-        poll_interval_s = max(0.005, float(poll_interval_s))
-        deadline = time.time() + timeout
-
-        while True:
-            if self._stopped_event.is_set() and not self.isRunning:
-                return True
-
-            remaining = deadline - time.time()
-            if remaining <= 0:
-                break
-
-            self._stopped_event.wait(timeout=min(poll_interval_s, remaining))
-
-        return self._stopped_event.is_set() and not self.isRunning
-
-    def stop(self, wait: bool = False, timeout: float = 3.0) -> bool:
+    def stop(self):
         self.isRunning = False
-
-    def restart(self):
-        print("Restarting Gesture Recogniser...")
-        self.isRunning = True
-        self.run()
 
     def update_subscribers(self, update):
         """
@@ -129,22 +99,13 @@ class VideoGestureRecogniser:
         print(gesture.value)
         self.update_subscribers(gesture.value)
     
-    def _capture_frame(self, cap):
-        """
-        Capture a frame from the camera, ensure it's valid and skip frames as necessary.
-        """
-        ret, frame = cap.read()
-        if not ret or frame is None or frame.size == 0 or not self.fps_manager.is_time_for_next_frame():
-            return None
-        self.fps_manager.update()
-        return frame
-    
     def _process_person_detection(self, frame):
         """
         Detect the main person in the frame and crop accordingly.
         """
-        if not self.use_person_recognition:
-            return frame
+        return frame
+        # if not self.use_person_recognition:
+        #     return frame
 
         # if self.person_recognizer is None:
         #     self.person_recognizer = PersonRecogniser()
@@ -173,25 +134,30 @@ class VideoGestureRecogniser:
         if cv2.waitKey(1) & 0xFF == ord('q'):
             self.isRunning = False
 
+    def _capture_frame(self, cap):
+        """
+        Capture a frame from the camera, ensure it's valid and skip frames as necessary.
+        """
+        ret, frame = cap.read()
+        if not ret or frame is None or frame.size == 0 or not self.fps_manager.is_time_for_next_frame():
+            return None
+        self.fps_manager.update()
+        return frame
+
     def run(self):
         """
         Main loop: capture video, detect person, crop frame, and recognize gestures.
         """
         # self._stopped_event.clear()
         self.isRunning = True
-        try:
-            with video_capture_manager() as cap, self._create_recognizer() as recognizer:
-                self.fps_manager.start()
+        with video_capture_manager() as cap, self._create_recognizer() as recognizer:
+            self.fps_manager.start()
 
-                while cap.isOpened() and self.isRunning:
-                    frame = self._capture_frame(cap)
-                    if frame is None:
-                        continue
+            while cap.isOpened() and self.isRunning:
+                frame = self._capture_frame(cap)
+                if frame is None:
+                    continue
 
-                    cropped_frame = self._process_person_detection(frame)
-                    self._send_to_recogniser(cropped_frame, recognizer)
-                    self._display_frame(frame)
-
-        finally:
-            pass
-            # self._stopped_event.set()
+                cropped_frame = self._process_person_detection(frame)
+                self._send_to_recogniser(cropped_frame, recognizer)
+                self._display_frame(frame)

@@ -1,5 +1,4 @@
 import os
-import threading
 from time import time
 import AppOpener
 from src.video_recogniser.gesture_recogniser.gestureRecogniser import VideoGestureRecogniser
@@ -14,7 +13,6 @@ from src.gui.actions import (
     get_run_path,
 )
 from src.controller.powerManager import PowerManager
-from src.controller.cameraManager import CameraManager
 from src.systemTrayDesktopApp.runtimeSignals import consume_recognizer_stop_request
 
 class GestureController:
@@ -32,14 +30,6 @@ class GestureController:
         self.powerManager = PowerManager(self.videoGestureRecogniser)
         # power manager is added afterwards as a subscriber since it needs videoGestureRecogniser as an argument
         self.videoGestureRecogniser.add_subscriber(self.powerManager)
-        self._resume_requested = threading.Event()
-        self._pending_handoff_path: str | None = None
-        self.cameraManager = CameraManager(
-            stop_capture=self._stop_capture_for_handoff,
-            resume_capture=self._request_resume_after_handoff,
-            pre_stop_delay_s=0.2,
-            post_stop_delay_s=3.25,
-        )
 
         self.prevUpdate = None
         self.last_gesture_detected_at = 0.0
@@ -47,47 +37,14 @@ class GestureController:
 
         self.gesture_mapping = load_mapping()
         self.run_uses_camera = load_run_uses_camera()
-        self._mapping_mtime = self._get_mapping_mtime()
-
-    def _request_resume_after_handoff(self) -> None:
-        """Signal that recognizer should be resumed after handoff completion."""
-        self._resume_requested.set()
-
-    def _stop_capture_for_handoff(self) -> bool:
-        """
-        Stop recognizer capture and return only after the loop has fully stopped.
-        """
-        self.videoGestureRecogniser.stop(wait=False)
-        if self.videoGestureRecogniser.wait_until_stopped(timeout=2.5):
-            return True
-
-        self.videoGestureRecogniser.stop(wait=False)
-        return self.videoGestureRecogniser.wait_until_stopped(timeout=1.5)
-
-    def _resume_capture_after_handoff(self) -> None:
-        """
-        Restart recognizer after external app exits.
-        """
-        self.videoGestureRecogniser.restart()
 
     def _project_root(self) -> str:
         """Return absolute path to the `src` directory."""
         return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    def _get_mapping_mtime(self) -> float:
-        """Return gesture mapping file modified time (0.0 when unavailable)."""
-        try:
-            return os.path.getmtime(MAPPING_PATH)
-        except OSError:
-            return 0.0
-
     def _reload_runtime_settings_if_needed(self) -> None:
         """Hot-reload runtime settings when gesture mapping file changes."""
-        current_mtime = self._get_mapping_mtime()
-        if current_mtime <= self._mapping_mtime:
-            return
 
-        self._mapping_mtime = current_mtime
         self.gesture_mapping = load_mapping()
         self.run_uses_camera = load_run_uses_camera()
         self.camera_view_enabled = load_camera_view_enabled()
@@ -113,9 +70,8 @@ class GestureController:
         Args:
             update: Detected gesture name, or None when no gesture is detected.
         """
-        self._reload_runtime_settings_if_needed()
         if consume_recognizer_stop_request():
-            self.videoGestureRecogniser.stop()
+            self.stop()
             return
 
         now = time()
@@ -181,13 +137,12 @@ class GestureController:
         if is_run_action(action):
             path = get_run_path(action)
             if path:
-                launch_path = self._resolve_launch_path(path)
+                launch_path = path
                 if not os.path.exists(launch_path):
                     print(f"Run target not found: {launch_path}")
                     return
                 if self.run_uses_camera:
-                    self._pending_handoff_path = launch_path
-                    self.videoGestureRecogniser.stop(wait=False)
+                    self.videoGestureRecogniser.stop()
                 else:
                     os.startfile(launch_path)
             return
