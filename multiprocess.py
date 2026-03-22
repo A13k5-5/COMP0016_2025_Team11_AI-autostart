@@ -1,4 +1,16 @@
 # nuitka-project: --mode=standalone
+
+# for pyside6
+# nuitka-project: --enable-plugin=pyside6
+# nuitka-project: --include-qt-plugins=qml
+
+# recognizer file for mediapipe
+# nuitka-project: --include-data-files={MAIN_DIRECTORY}/src/video_recogniser/gesture_recogniser/gesture_recognizer.task=src/video_recogniser/gesture_recogniser/gesture_recognizer.task
+
+# icons
+# nuitka-project: --include-data-files={MAIN_DIRECTORY}/src/systemTrayDesktopApp/icon.png=src/systemTrayDesktopApp/icon.png
+# nuitka-project: --include-data-files={MAIN_DIRECTORY}/icon.png=icon.png
+
 from threading import Thread
 from PIL import Image
 from pathlib import Path
