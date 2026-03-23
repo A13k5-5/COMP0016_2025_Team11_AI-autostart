@@ -42,16 +42,16 @@ class SystemTrayApp:
         # Create the menu
         menu = QMenu()
 
-        action1 = QAction("Start recognition")
+        action1 = QAction("Start Recognition")
         action1.triggered.connect(self.run_controller_in_thread)
         menu.addAction(action1)
 
-        action2 = QAction("Stop recognition")
+        action2 = QAction("Stop Recognition")
         action2.triggered.connect(self._controller.stop)
         menu.addAction(action2)
 
         mapping_window = MappingWindow(self._controller)
-        action3 = QAction("Open mapping window")
+        action3 = QAction("Open Settings")
         action3.triggered.connect(mapping_window.show)
         menu.addAction(action3)
 
@@ -61,4 +61,3 @@ class SystemTrayApp:
 
         tray.setContextMenu(menu)
         self.app.exec()
-
