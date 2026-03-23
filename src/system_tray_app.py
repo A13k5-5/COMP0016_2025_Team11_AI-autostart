@@ -31,7 +31,7 @@ class SystemTrayApp:
         self.app = QApplication([])
         self.app.setQuitOnLastWindowClosed(False)
 
-        icon_path: Path = Path(__file__).parent / "icon.png"
+        icon_path: Path = Path(__file__).parent.parent / "icon.png"
         icon = QIcon(icon_path.as_posix())
 
         # Create the tray
