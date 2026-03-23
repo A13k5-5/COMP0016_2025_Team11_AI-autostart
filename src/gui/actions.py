@@ -1,14 +1,14 @@
 import json
-import os
-import importlib
 from src.video_recogniser.gesture_recogniser.gestureLabels import (
     EnumGesture,
     SUPPORTED_GESTURES as CANONICAL_SUPPORTED_GESTURES,
 )
+from pathlib import Path
+import AppOpener
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-MAPPING_PATH = os.path.join(BASE_DIR, "gui", "gesture_mapping.json")
-APP_DATA_PATH = os.path.join(BASE_DIR, "app_data.json")
+SRC_DIR = Path(__file__).parent.parent
+MAPPING_PATH = SRC_DIR / "gesture_mapping.json"
+APP_DATA_PATH = SRC_DIR / "app_data.json"
 
 SUPPORTED_ACTIONS = [
     "stop",
@@ -56,6 +56,8 @@ def load_app_data(path: str = APP_DATA_PATH) -> dict:
     """
     Load app_data.json and return the app-name -> app-id mapping.
     """
+    if not path.exists():
+        update_app_data()
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -63,29 +65,8 @@ def load_app_data(path: str = APP_DATA_PATH) -> dict:
 def update_app_data() -> None:
     """
     Regenerate app_data.json for the current machine using AppOpener.
-
-    AppOpener versions differ:
-    - Newer versions may expose `create_app_data()` directly.
-    - Older versions expose `mklist()` which writes a file named `app_data`
-      (without the .json extension).
-
-    This function handles both cases and always leaves this project with a
-    refreshed `app_data.json` at APP_DATA_PATH.
     """
-    app_opener = importlib.import_module("AppOpener")
-    create_app_data_fn = getattr(app_opener, "create_app_data", None)
-    if callable(create_app_data_fn):
-        create_app_data_fn()
-        return
-
-    mklist_fn = getattr(app_opener, "mklist", None)
-    if not callable(mklist_fn):
-        raise RuntimeError("AppOpener does not expose create_app_data or mklist")
-
-    mklist_fn(name="app_data", path=BASE_DIR, output=False)
-    generated_path = os.path.join(BASE_DIR, "app_data")
-    if os.path.exists(generated_path):
-        os.replace(generated_path, APP_DATA_PATH)
+    AppOpener.mklist(name="app_data.json", path=SRC_DIR, output=False)
 
 
 def load_camera_view_enabled(path: str = MAPPING_PATH) -> bool:
