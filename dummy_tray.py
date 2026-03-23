@@ -2,6 +2,7 @@
 
 # for pyside6
 # nuitka-project: --enable-plugin=pyside6
+# nuitka-project: --include-data-files=icon.png=icon.png
 
 from PySide6.QtGui import QIcon, QAction
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu

@@ -251,5 +251,6 @@ class MappingWindow(QtWidgets.QWidget):
             camera_view_enabled=self.reference_page.camera_view_toggle.isChecked(),
             person_recognition_enabled=self.reference_page.person_recognition_toggle.isChecked(),
         )
-        self._controller.reload_runtime_settings_if_needed()
+        if self._controller is not None:
+            self._controller.reload_runtime_settings_if_needed()
         self.status.setText("Saved to file.")
