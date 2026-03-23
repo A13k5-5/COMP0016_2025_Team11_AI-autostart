@@ -122,6 +122,7 @@ class VideoGestureRecogniser:
         Display the frame with gesture recognition and handle the stop condition.
         """
         if not self.show_camera_view:
+            cv2.destroyAllWindows()
             return
         cv2.imshow(WINDOW_NAME, frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):

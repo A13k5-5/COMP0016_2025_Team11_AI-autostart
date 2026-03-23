@@ -49,8 +49,8 @@ class GestureController:
         self.run_uses_camera = load_run_uses_camera()
         self.camera_view_enabled = load_camera_view_enabled()
         self.person_recognition_enabled = load_person_recognition_enabled()
-        self.videoGestureRecogniser.show_camera_view = load_camera_view_enabled()
         self.videoGestureRecogniser.use_person_recognition = load_person_recognition_enabled()
+        self.videoGestureRecogniser.show_camera_view = load_camera_view_enabled()
 
     def _resolve_launch_path(self, path: str) -> str:
         """
