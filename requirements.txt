@@ -1,6 +1,5 @@
 mediapipe==0.10.21
-openvino==2025.4.1
+openvino==2026.0.0
 AppOpener==1.7
 pyside6==6.10.2
-pystray==0.19.5
 imageio
