@@ -5,19 +5,18 @@
 ## nuitka-project: --include-qt-plugins=qml
 
 # --------------- FOR OPENVINO ----------------
-## nuitka-project: --include-package=openvino
-## nuitka-project: --include-package-data=openvino
+# nuitka-project: --include-package=openvino
+# nuitka-project: --include-package-data=openvino
 
 # recognizer file for mediapipe
 # nuitka-project: --include-data-files={MAIN_DIRECTORY}/src/video_recogniser/gesture_recogniser/gesture_recognizer.task=src/video_recogniser/gesture_recogniser/gesture_recognizer.task
 
 # icons
-# nuitka-project: --include-data-files={MAIN_DIRECTORY}/src/systemTrayDesktopApp/icon.ico=src/systemTrayDesktopApp/icon.ico
-# nuitka-project: --include-data-files={MAIN_DIRECTORY}/src/systemTrayDesktopApp/icon.png=src/systemTrayDesktopApp/icon.png
+# nuitka-project: --include-data-files={MAIN_DIRECTORY}/icon.ico=icon.ico
+# nuitka-project: --include-data-files={MAIN_DIRECTORY}/src/icon.png=src/icon.png
 
-from src.systemTrayDesktopApp.systemTrayApp import SystemTrayApp
-
+from src.system_tray_app import SystemTrayApp
 
 if __name__ == "__main__":
     app = SystemTrayApp()
-    app.main()
+    app.run()
