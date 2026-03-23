@@ -1,4 +1,5 @@
 # nuitka-project: --mode=standalone
+# nuitka-project: --window-console-mode=disable
 
 # for pyside6
 # nuitka-project: --enable-plugin=pyside6
