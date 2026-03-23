@@ -8,7 +8,6 @@ from src.gui.pages.commonLayouts import (
     init_action_gesture_table,
     selected_rows,
     set_readonly_action_cell,
-    to_relative_project_path,
 )
 
 
@@ -45,9 +44,6 @@ class GamesPage(QtWidgets.QWidget):
         self.add_btn.clicked.connect(lambda: self.add_game_row())
         self.delete_btn.clicked.connect(self._delete_selected_rows)
 
-    def _to_relative_project_path(self, path: str) -> str:
-        return to_relative_project_path(__file__, path)
-
     def _create_gesture_combo(self, current_gesture: str) -> QtWidgets.QComboBox:
         return create_gesture_combo(self.supported_gestures, current_gesture, self.on_gesture_changed)
 
@@ -83,9 +79,8 @@ class GamesPage(QtWidgets.QWidget):
             "No UI Files (*.noui);;All Files (*)",
         )
         if path:
-            full_path = self._to_relative_project_path(os.path.abspath(path))
             label.setText(os.path.basename(path))
-            label.setToolTip(full_path)
+            label.setToolTip(path)
 
     def _selected_rows(self) -> list[int]:
         return selected_rows(self.table)
