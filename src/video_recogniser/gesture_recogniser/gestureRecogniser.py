@@ -100,7 +100,8 @@ class VideoGestureRecogniser:
         """
         Detect the main person in the frame and crop accordingly.
         """
-        if not self.use_person_recognition:
+        # if in low power mode, no person recognition
+        if not self.use_person_recognition or self.is_low_power_mode():
             return frame
 
         # lazy initialisation
@@ -149,6 +150,7 @@ class VideoGestureRecogniser:
             while cap.isOpened() and self.isRunning:
                 frame = self._capture_frame(cap)
                 if frame is None:
+                    # in low power mode
                     continue
 
                 cropped_frame = self._process_person_detection(frame)
