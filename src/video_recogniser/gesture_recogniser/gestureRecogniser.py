@@ -26,9 +26,8 @@ class VideoGestureRecogniser:
         self.subscribers = [controller] if controller is not None else []
         self.isRunning: bool = True
         self.use_person_recognition: bool = use_person_recognition
-        # self.use_person_recognition: bool = False
+
         self.person_recognizer = PersonRecogniser() if self.use_person_recognition else None
-        # self.person_recognizer = None
         self.show_camera_view: bool = show_camera_view
 
     def stop(self):
@@ -104,13 +103,13 @@ class VideoGestureRecogniser:
         if not self.use_person_recognition:
             return frame
 
+        # lazy initialisation
+        if self.person_recognizer is None:
+            self.person_recognizer = PersonRecogniser()
+
         person_box = self.person_recognizer.detect_main_person(frame)
         if person_box:
             top, left, bottom, right = person_box
-            top = max(0, top)
-            left = max(0, left)
-            bottom = min(frame.shape[0], bottom)
-            right = min(frame.shape[1], right)
             draw_halo_effect(frame, (top, left, bottom, right))
             cropped_frame = frame[top:bottom, left:right]
             if cropped_frame.size == 0:
