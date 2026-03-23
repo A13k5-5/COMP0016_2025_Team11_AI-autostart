@@ -1,0 +1,31 @@
+{
+  "pointing_up_left": "run:C:\\Users\\pison\\OneDrive\\Po\u010d\u00edta\u010d\\Hobbit 2 - Daniel.noui\"",
+  "pointing_up_right": "",
+  "closed_fist_left": "",
+  "closed_fist_right": "run:C:/Users/pison/OneDrive/Po\u010d\u00edta\u010d/Hobbit 2 - Daniel.noui",
+  "victory_left": "",
+  "victory_right": "run:gameEngine/main.dist/main.exe",
+  "i_love_you_left": "stop",
+  "i_love_you_right": "",
+  "thumb_up_left": "",
+  "thumb_up_right": "run:C:/Users/pison/OneDrive/Po\u010d\u00edta\u010d/ocino 50.mov",
+  "thumb_down_left": "",
+  "thumb_down_right": "",
+  "dynamic_apps": [],
+  "game_run_paths": [
+    "C:/Users/pison/OneDrive/Po\u010d\u00edta\u010d/Hobbit 2 - Daniel.noui"
+  ],
+  "run_uses_camera": true,
+  "file_run_entries": [
+    {
+      "path": "C:/Users/pison/OneDrive/Po\u010d\u00edta\u010d/ocino 50.mov",
+      "uses_camera": false
+    },
+    {
+      "path": "C:\\Users\\pison\\OneDrive\\Po\u010d\u00edta\u010d\\Hobbit 2 - Daniel.noui\"",
+      "uses_camera": true
+    }
+  ],
+  "camera_view_enabled": true,
+  "person_recognition_enabled": true
+}

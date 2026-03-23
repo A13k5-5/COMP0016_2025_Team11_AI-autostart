@@ -1,4 +1,4 @@
-from openvino.runtime import Core
+from openvino import Core
 import numpy as np
 import cv2
 from src.video_recogniser.gesture_recogniser.fps_util import FPS

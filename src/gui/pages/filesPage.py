@@ -6,7 +6,6 @@ from src.gui.pages.commonLayouts import (
     build_path_browse_cell,
     create_gesture_combo,
     selected_rows,
-    to_relative_project_path,
 )
 
 
@@ -49,9 +48,6 @@ class FilesPage(QtWidgets.QWidget):
         self.add_btn.clicked.connect(lambda: self.add_file_row())
         self.delete_btn.clicked.connect(self._delete_selected_rows)
 
-    def _to_relative_project_path(self, path: str) -> str:
-        return to_relative_project_path(__file__, path)
-
     def _create_gesture_combo(self, current_gesture: str) -> QtWidgets.QComboBox:
         return create_gesture_combo(self.supported_gestures, current_gesture, self.on_gesture_changed)
 
@@ -84,9 +80,8 @@ class FilesPage(QtWidgets.QWidget):
     def _browse_file_into(self, label: QtWidgets.QLabel) -> None:
         path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select File", "", "All Files (*)")
         if path:
-            full_path = self._to_relative_project_path(os.path.abspath(path))
             label.setText(os.path.basename(path))
-            label.setToolTip(full_path)
+            label.setToolTip(path)
 
     def clear_rows(self) -> None:
         while self.table.rowCount() > 0:

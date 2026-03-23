@@ -48,6 +48,8 @@ class AppsPage(QtWidgets.QWidget):
         layout.addWidget(self.table)
         layout.addLayout(button_row)
 
+        # update app data on init
+        update_app_data()
         self.add_btn.clicked.connect(self._open_add_app_dialog)
         self.update_btn.clicked.connect(self._refresh_app_list)
         self.delete_btn.clicked.connect(self._delete_selected_rows)

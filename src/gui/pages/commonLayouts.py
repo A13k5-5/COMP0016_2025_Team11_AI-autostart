@@ -63,11 +63,6 @@ def project_root(current_file: str) -> str:
     return os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
 
 
-def to_relative_project_path(current_file: str, path: str) -> str:
-    """Return project-relative normalized path."""
-    return os.path.relpath(path, project_root(current_file)).replace("\\", "/")
-
-
 def build_path_browse_cell(
     table: QtWidgets.QTableWidget,
     row: int,
