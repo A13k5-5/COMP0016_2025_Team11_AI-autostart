@@ -2,7 +2,7 @@
   "pointing_up_left": "",
   "pointing_up_right": "close:calculator",
   "closed_fist_left": "open:calculator",
-  "closed_fist_right": "open:notepad",
+  "closed_fist_right": "",
   "victory_left": "close:notepad",
   "victory_right": "run:gameEngine/main.dist/main.exe",
   "i_love_you_left": "stop",
@@ -10,7 +10,7 @@
   "thumb_up_left": "run:../../../OneDrive/Po\u010d\u00edta\u010d/Hobbit 2 - Daniel.noui",
   "thumb_up_right": "",
   "thumb_down_left": "",
-  "thumb_down_right": "",
+  "thumb_down_right": "open:notepad",
   "dynamic_apps": [
     "calculator",
     "notepad"

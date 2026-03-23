@@ -36,7 +36,7 @@ class SystemTrayApp:
         self._controller.stop()
         self.app.quit()
 
-    def main(self) -> None:
+    def run(self) -> None:
         """
         Start the system tray icon application.
         """
@@ -60,7 +60,7 @@ class SystemTrayApp:
         action2.triggered.connect(self._controller.stop)
         menu.addAction(action2)
 
-        mapping_window = MappingWindow()
+        mapping_window = MappingWindow(self._controller)
         action3 = QAction("Open mapping window")
         action3.triggered.connect(mapping_window.show)
         menu.addAction(action3)
@@ -75,4 +75,4 @@ class SystemTrayApp:
 
 if __name__ == "__main__":
     app = SystemTrayApp()
-    app.main()
+    app.run()

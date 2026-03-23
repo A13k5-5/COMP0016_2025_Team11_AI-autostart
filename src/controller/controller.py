@@ -38,6 +38,9 @@ class GestureController:
         self.gesture_mapping = load_mapping()
         self.run_uses_camera = load_run_uses_camera()
 
+    def reload_mapping(self):
+        self.gesture_mapping = load_mapping()
+
     def _project_root(self) -> str:
         """Return absolute path to the `src` directory."""
         return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

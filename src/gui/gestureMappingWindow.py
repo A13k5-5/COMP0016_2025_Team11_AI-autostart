@@ -1,5 +1,6 @@
 from PySide6 import QtWidgets
 
+from src.controller.controller import GestureController
 from src.gui.actions import (
     SUPPORTED_GESTURES,
     SUPPORTED_ACTIONS,
@@ -39,13 +40,14 @@ class MappingWindow(QtWidgets.QWidget):
         "stop": "Stop Gesture Recognizer",
     }
 
-    def __init__(self):
+    def __init__(self, controller: GestureController | None = None):
         super().__init__()
         self._setup_window("AI-Autostart settings", 620, 520)
         self._create_widgets()
         self._add_widgets()
         self._connect_signals()
         self.load_into_table()
+        self._controller = controller
 
     def _setup_window(self, title: str, width: int, height: int) -> None:
         self.setWindowTitle(title)
@@ -249,4 +251,5 @@ class MappingWindow(QtWidgets.QWidget):
             camera_view_enabled=self.reference_page.camera_view_toggle.isChecked(),
             person_recognition_enabled=self.reference_page.person_recognition_toggle.isChecked(),
         )
+        self._controller.reload_mapping()
         self.status.setText("Saved to file.")
