@@ -1,5 +1,4 @@
 import time
-import threading
 from pathlib import Path
 
 import cv2
@@ -9,11 +8,11 @@ from mediapipe.tasks.python.vision import GestureRecognizer, RunningMode, Gestur
 
 from src.video_recogniser.gesture_recogniser.fps_util import FPS
 from .gestureLabels import EnumGesture
-# from src.video_recogniser.person_recogniser.haloEffect import draw_halo_effect
+from src.video_recogniser.person_recogniser.haloEffect import draw_halo_effect
 from .videoCaptureManager import video_capture_manager
-# from src.video_recogniser.person_recogniser.personRecogniser import PersonRecogniser
+from src.video_recogniser.person_recogniser.personRecogniser import PersonRecogniser
 
-WINDOW_NAME = "Hand Detection"
+WINDOW_NAME = "AI-Autostart (Hand Gesture Recognition)"
 
 class VideoGestureRecogniser:
     def __init__(self, controller, show_camera_view: bool = False, use_person_recognition: bool = True):
@@ -22,14 +21,14 @@ class VideoGestureRecogniser:
         """
         self.model_path = Path(__file__).parent / "gesture_recognizer.task"
         # default value of 30 fps
-        self.fps_manager = FPS(30)
+        self.fps_manager: FPS = FPS(30)
         self._is_low_power_mode = False
         self.subscribers = [controller] if controller is not None else []
-        self.isRunning = True
-        # self.use_person_recognition = bool(use_person_recognition)
-        self.use_person_recognition: bool = False
-        # self.person_recognizer = PersonRecogniser() if self.use_person_recognition else None
-        self.person_recognizer = None
+        self.isRunning: bool = True
+        self.use_person_recognition: bool = use_person_recognition
+        # self.use_person_recognition: bool = False
+        self.person_recognizer = PersonRecogniser() if self.use_person_recognition else None
+        # self.person_recognizer = None
         self.show_camera_view: bool = show_camera_view
 
     def stop(self):
@@ -96,19 +95,14 @@ class VideoGestureRecogniser:
             self.update_subscribers(None)
             return
 
-        print(gesture.value)
         self.update_subscribers(gesture.value)
     
     def _process_person_detection(self, frame):
         """
         Detect the main person in the frame and crop accordingly.
         """
-        return frame
-        # if not self.use_person_recognition:
-        #     return frame
-
-        # if self.person_recognizer is None:
-        #     self.person_recognizer = PersonRecogniser()
+        if not self.use_person_recognition:
+            return frame
 
         person_box = self.person_recognizer.detect_main_person(frame)
         if person_box:
@@ -117,7 +111,7 @@ class VideoGestureRecogniser:
             left = max(0, left)
             bottom = min(frame.shape[0], bottom)
             right = min(frame.shape[1], right)
-            # draw_halo_effect(frame, (top, left, bottom, right))
+            draw_halo_effect(frame, (top, left, bottom, right))
             cropped_frame = frame[top:bottom, left:right]
             if cropped_frame.size == 0:
                 return frame
@@ -148,7 +142,6 @@ class VideoGestureRecogniser:
         """
         Main loop: capture video, detect person, crop frame, and recognize gestures.
         """
-        # self._stopped_event.clear()
         self.isRunning = True
         with video_capture_manager() as cap, self._create_recognizer() as recognizer:
             self.fps_manager.start()
