@@ -1,4 +1,5 @@
 import os
+import subprocess
 from time import time
 import AppOpener
 from src.video_recogniser.gesture_recogniser.gestureRecogniser import VideoGestureRecogniser
@@ -38,9 +39,9 @@ class GestureController:
         self.gesture_mapping = load_mapping()
         self.run_uses_camera = load_run_uses_camera()
 
-    def _project_root(self) -> str:
-        """Return absolute path to the `src` directory."""
-        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.path_to_run = None
+        self.path_was_run = False
+
 
     def reload_runtime_settings_if_needed(self) -> None:
         """Hot-reload runtime settings when gesture mapping file changes."""
@@ -51,17 +52,6 @@ class GestureController:
         self.person_recognition_enabled = load_person_recognition_enabled()
         self.videoGestureRecogniser.use_person_recognition = load_person_recognition_enabled()
         self.videoGestureRecogniser.show_camera_view = load_camera_view_enabled()
-
-    def _resolve_launch_path(self, path: str) -> str:
-        """
-        Resolve a run-action path into an absolute filesystem path.
-
-        Stored run paths are often project-relative (e.g. ../Downloads/foo.noui).
-        """
-        expanded = os.path.expandvars(os.path.expanduser(path.strip()))
-        if os.path.isabs(expanded):
-            return expanded
-        return os.path.abspath(os.path.join(self._project_root(), expanded))
 
     def update(self, update: str | None):
         """
@@ -100,6 +90,10 @@ class GestureController:
         action = self.gesture_mapping.get(update)
         self.execute_action(action)
 
+    def run_file_and_wait(self, path: str) -> None:
+        subprocess.run(["cmd", "/c", "start", "", "/wait", path])
+        self.path_was_run = True
+
     def execute_action(self, action: str) -> None:
         """
         Execute one action using the project's action-text format.
@@ -137,14 +131,12 @@ class GestureController:
         if is_run_action(action):
             path = get_run_path(action)
             if path:
-                launch_path = path
-                if not os.path.exists(launch_path):
-                    print(f"Run target not found: {launch_path}")
-                    return
                 if self.run_uses_camera:
                     self.videoGestureRecogniser.stop()
+                    self.path_to_run = path
+                    self.path_was_run = False
                 else:
-                    os.startfile(launch_path)
+                    self.run_file_and_wait(path)
             return
 
     def stop(self):
@@ -155,5 +147,7 @@ class GestureController:
         """
         Start recognizer loop and handle handoff-triggered restarts in this thread.
         """
-        self.videoGestureRecogniser.run()
-        print("Gesture recognizer loop has fully stopped.")
+        while True:
+            self.videoGestureRecogniser.run()
+            if not self.path_was_run:
+                self.run_file_and_wait(self.path_to_run)
