@@ -1,4 +1,5 @@
 from pathlib import Path
+import threading
 
 from PySide6.QtGui import QIcon, QAction
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
@@ -11,6 +12,10 @@ class SystemTrayApp:
     def __init__(self):
         self._controller: GestureController = GestureController()
         self.app: QApplication | None = None
+
+    def run_recognition_in_thread(self):
+        recognition_thread = threading.Thread(target=self._controller.run)
+        recognition_thread.start()
 
     def exit_app(self):
         self._controller.stop()
@@ -35,7 +40,7 @@ class SystemTrayApp:
         menu = QMenu()
 
         action1 = QAction("Start Recognition")
-        action1.triggered.connect(self._controller.run)
+        action1.triggered.connect(self.run_recognition_in_thread)
         menu.addAction(action1)
 
         action2 = QAction("Stop Recognition")
