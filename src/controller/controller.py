@@ -13,7 +13,6 @@ from src.gui.actions import (
     get_run_path,
 )
 from src.controller.powerManager import PowerManager
-from src.systemTrayDesktopApp.runtimeSignals import consume_recognizer_stop_request
 
 class GestureController:
     """
@@ -59,10 +58,6 @@ class GestureController:
         Args:
             update: Detected gesture name, or None when no gesture is detected.
         """
-        if consume_recognizer_stop_request():
-            self.stop()
-            return
-
         now = time()
 
         # no gesture detected
