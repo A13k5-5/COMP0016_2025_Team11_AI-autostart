@@ -2,8 +2,8 @@
 # nuitka-project: --windows-console-mode=disable
 
 # for pyside6
-## nuitka-project: --enable-plugin=pyside6
-## nuitka-project: --include-qt-plugins=qml
+# nuitka-project: --enable-plugin=pyside6
+# nuitka-project: --include-qt-plugins=qml
 
 # --------------- FOR OPENVINO ----------------
 # nuitka-project: --include-package=openvino
@@ -21,6 +21,7 @@
 # nuitka-project: --windows-icon-from-ico=icon.png
 
 # nuitka-project: --product-name=AI-Autostart
+# nuitka-project: --product-version=1.0.0
 
 from src.system_tray_app import SystemTrayApp
 
