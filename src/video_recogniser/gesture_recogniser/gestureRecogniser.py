@@ -8,9 +8,9 @@ from mediapipe.tasks.python.vision import GestureRecognizer, RunningMode, Gestur
 
 from src.video_recogniser.gesture_recogniser.fps_util import FPS
 from .gestureLabels import EnumGesture
-# from src.video_recogniser.person_recogniser.haloEffect import draw_halo_effect
+from src.video_recogniser.person_recogniser.haloEffect import draw_halo_effect
 from .videoCaptureManager import video_capture_manager
-# from src.video_recogniser.person_recogniser.personRecogniser import PersonRecogniser
+from src.video_recogniser.person_recogniser.personRecogniser import PersonRecogniser
 
 WINDOW_NAME = "AI-Autostart (Hand Gesture Recognition)"
 
@@ -25,11 +25,9 @@ class VideoGestureRecogniser:
         self._is_low_power_mode = False
         self.subscribers = [controller] if controller is not None else []
         self.isRunning: bool = True
-        # self.use_person_recognition: bool = use_person_recognition
-        self.use_person_recognition: bool = False
+        self.use_person_recognition: bool = use_person_recognition
 
-        # self.person_recognizer = PersonRecogniser() if self.use_person_recognition else None
-        self.person_recognizer = None
+        self.person_recognizer = PersonRecogniser() if self.use_person_recognition else None
         self.show_camera_view: bool = show_camera_view
 
     def stop(self):
@@ -102,7 +100,6 @@ class VideoGestureRecogniser:
         """
         Detect the main person in the frame and crop accordingly.
         """
-        return frame
         if not self.use_person_recognition:
             return frame
 

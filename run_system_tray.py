@@ -1,12 +1,13 @@
 # nuitka-project: --mode=standalone
-# nuitka-project: --windows-console-mode=disable
 
 # for pyside6
 # nuitka-project: --enable-plugin=pyside6
 
 # --------------- FOR OPENVINO ----------------
-## nuitka-project: --include-package=openvino
-## nuitka-project: --include-package-data=openvino
+# nuitka-project: --include-package=openvino
+# nuitka-project: --include-package-data=openvino
+# Include all person detector IR files (xml/bin) in the same runtime path expected by PersonRecogniser
+# nuitka-project: --include-data-dir={MAIN_DIRECTORY}/src/video_recogniser/person_recogniser/intel=src/video_recogniser/person_recogniser/intel
 
 # recognizer file for mediapipe
 # nuitka-project: --include-data-files={MAIN_DIRECTORY}/src/video_recogniser/gesture_recogniser/gesture_recognizer.task=src/video_recogniser/gesture_recogniser/gesture_recognizer.task

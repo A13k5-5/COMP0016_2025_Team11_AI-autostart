@@ -27,5 +27,5 @@
     }
   ],
   "camera_view_enabled": true,
-  "person_recognition_enabled": false
+  "person_recognition_enabled": true
 }
