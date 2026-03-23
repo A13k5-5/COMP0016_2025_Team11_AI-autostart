@@ -1,4 +1,5 @@
 # nuitka-project: --mode=standalone
+# nuitka-project: --windows-console-mode=disable
 
 # for pyside6
 ## nuitka-project: --enable-plugin=pyside6
@@ -11,9 +12,15 @@
 # recognizer file for mediapipe
 # nuitka-project: --include-data-files={MAIN_DIRECTORY}/src/video_recogniser/gesture_recogniser/gesture_recognizer.task=src/video_recogniser/gesture_recogniser/gesture_recognizer.task
 
-# icons
-# nuitka-project: --include-data-files={MAIN_DIRECTORY}/icon.ico=icon.ico
-# nuitka-project: --include-data-files={MAIN_DIRECTORY}/src/icon.png=src/icon.png
+# settings files
+# nuitka-project: --include-data-files=src/gesture_mapping.json=src/gesture_mapping.json
+# nuitka-project: --include-data-files=src/app_data.json=src/app_data.json
+
+# icon
+# nuitka-project: --include-data-files=icon.png=icon.png
+# nuitka-project: --windows-icon-from-ico=icon.png
+
+# nuitka-project: --product-name=AI-Autostart
 
 from src.system_tray_app import SystemTrayApp
 
