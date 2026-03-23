@@ -1,4 +1,3 @@
-import os
 import subprocess
 from time import time
 import AppOpener
@@ -90,9 +89,9 @@ class GestureController:
         action = self.gesture_mapping.get(update)
         self.execute_action(action)
 
-    def run_file_and_wait(self, path: str) -> None:
-        subprocess.run(["cmd", "/c", "start", "", "/wait", path])
-        self.path_was_run = True
+    def run_file_and_wait(self) -> None:
+        subprocess.run(["cmd", "/c", "start", "", "/wait", self.path_to_run])
+        self.path_to_run = None
 
     def execute_action(self, action: str) -> None:
         """
@@ -131,12 +130,11 @@ class GestureController:
         if is_run_action(action):
             path = get_run_path(action)
             if path:
+                self.path_to_run = path
                 if self.run_uses_camera:
                     self.videoGestureRecogniser.stop()
-                    self.path_to_run = path
-                    self.path_was_run = False
                 else:
-                    self.run_file_and_wait(path)
+                    self.run_file_and_wait()
             return
 
     def stop(self):
@@ -149,5 +147,10 @@ class GestureController:
         """
         while True:
             self.videoGestureRecogniser.run()
-            if not self.path_was_run:
-                self.run_file_and_wait(self.path_to_run)
+
+            # the recogniser was stopped to run a file that requires camera access
+            if self.path_to_run is not None:
+                self.run_file_and_wait()
+            else:
+            # the recogniser was stopped naturally
+                break
