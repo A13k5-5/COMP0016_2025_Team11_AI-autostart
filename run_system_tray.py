@@ -3,6 +3,12 @@
 # for pyside6
 # nuitka-project: --enable-plugin=pyside6
 
+# nuitka-project: --include-package-data=AppOpener
+
+# for gesture reference icons
+# nuitka-project: --include-data-dir={MAIN_DIRECTORY}/src/gui/icons=src/gui/icons
+
+
 # --------------- FOR OPENVINO ----------------
 # nuitka-project: --include-package=openvino
 # nuitka-project: --include-package-data=openvino
