@@ -23,7 +23,7 @@ class GamesPage(QtWidgets.QWidget):
         super().__init__(parent)
         self.supported_gestures = supported_gestures
         self.on_gesture_changed = on_gesture_changed
-        self.static_rows = 1
+        self.static_rows = 0
 
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -54,9 +54,9 @@ class GamesPage(QtWidgets.QWidget):
         combo = self._create_gesture_combo(gesture)
         self.table.setCellWidget(row, 1, combo)
 
-    def set_no_gui_game_engine_row(self, gesture: str = "") -> None:
-        self._set_action_cell(0, "No GUI Game Engine")
-        self._set_gesture_cell(0, gesture)
+    # def set_no_gui_game_engine_row(self, gesture: str = "") -> None:
+    #     self._set_action_cell(0, "No GUI Game Engine")
+    #     self._set_gesture_cell(0, gesture)
 
     def clear_dynamic_rows(self) -> None:
         while self.table.rowCount() > self.static_rows:

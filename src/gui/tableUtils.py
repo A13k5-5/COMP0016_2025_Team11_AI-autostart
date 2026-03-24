@@ -77,8 +77,8 @@ def collect_mapping_from_tables(
     game_table: QtWidgets.QTableWidget,
     file_table: QtWidgets.QTableWidget,
     supported_gestures: list[str],
-    game_engine_row: int,
-    no_gui_game_engine_relative_path: str,
+    # game_engine_row: int,
+    # no_gui_game_engine_relative_path: str,
     make_run_action,
 ) -> dict:
     """Collect current dropdown selections into a gesture-to-action mapping."""
@@ -93,12 +93,13 @@ def collect_mapping_from_tables(
         if action and gesture:
             out[gesture] = action
 
-    no_gui_combo = game_table.cellWidget(game_engine_row, 1)
-    no_gui_gesture = _combo_gesture_id(no_gui_combo)
-    if no_gui_gesture:
-        out[no_gui_gesture] = make_run_action(no_gui_game_engine_relative_path)
+    # no_gui_combo = game_table.cellWidget(game_engine_row, 1)
+    # no_gui_gesture = _combo_gesture_id(no_gui_combo)
+    # if no_gui_gesture:
+    #     out[no_gui_gesture] = make_run_action(no_gui_game_engine_relative_path)
 
-    for row in range(game_engine_row + 1, game_table.rowCount()):
+    # for row in range(game_engine_row + 1, game_table.rowCount()):
+    for row in range(0, game_table.rowCount()):
         path = get_cell_path(game_table, row)
         combo = game_table.cellWidget(row, 1)
         gesture = _combo_gesture_id(combo)

@@ -34,8 +34,8 @@ from src.gui.tableUtils import (
 class MappingWindow(QtWidgets.QWidget):
     """Window for configuring gesture-to-action mappings."""
 
-    _GAME_ENGINE_ROW: int = 0
-    _NO_GUI_GAME_ENGINE_RELATIVE_PATH = "gameEngine/main.dist/main.exe"
+    # _GAME_ENGINE_ROW: int = 0
+    # _NO_GUI_GAME_ENGINE_RELATIVE_PATH = "gameEngine/main.dist/main.exe"
     _ACTION_DISPLAY_NAMES = {
         "stop": "Stop Gesture Recognizer",
     }
@@ -115,9 +115,7 @@ class MappingWindow(QtWidgets.QWidget):
         self.reload_btn.clicked.connect(self.load_into_table)
         self.clear_btn.clicked.connect(self.clear_selections)
         self.save_btn.clicked.connect(self.save_from_table)
-
-        self.reference_page.camera_view_toggle.toggled.connect(self._save_camera_view_setting)
-        self.reference_page.person_recognition_toggle.toggled.connect(self._save_person_recognition_setting)
+        self.reference_page.save_display_settings_btn.clicked.connect(self._save_reference_settings)
 
         self.apps_page.status_message.connect(self.status.setText)
         self.games_page.status_message.connect(self.status.setText)
@@ -138,6 +136,13 @@ class MappingWindow(QtWidgets.QWidget):
             save_person_recognition_enabled(enabled)
         except Exception as exc:
             self.status.setText(f"Failed to save person recognition setting: {exc}")
+
+    def _save_reference_settings(self) -> None:
+        self._save_camera_view_setting(self.reference_page.camera_view_toggle.isChecked())
+        self._save_person_recognition_setting(self.reference_page.person_recognition_toggle.isChecked())
+        if self._controller is not None:
+            self._controller.reload_runtime_settings_if_needed()
+        self.status.setText("Display settings saved.")
 
     def _navigate(self, index: int) -> None:
         self._stack.setCurrentIndex(index)
@@ -165,8 +170,8 @@ class MappingWindow(QtWidgets.QWidget):
                 refresh_options=False,
             )
 
-        no_gui_action = make_run_action(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
-        self.games_page.set_no_gui_game_engine_row(action_to_gesture.get(no_gui_action, ""))
+        # no_gui_action = make_run_action(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
+        # self.games_page.set_no_gui_game_engine_row(action_to_gesture.get(no_gui_action, ""))
 
         game_run_paths_list = load_game_run_paths()
         self.games_page.clear_dynamic_rows()
@@ -181,7 +186,8 @@ class MappingWindow(QtWidgets.QWidget):
         file_entries = ensure_file_entries(
             file_entries=load_file_run_entries(),
             action_to_gesture=action_to_gesture,
-            no_gui_action=no_gui_action,
+            # no_gui_action=no_gui_action,
+            # no_gui_action="none",
             game_run_paths=game_run_paths_list,
             fallback_run_uses_camera=load_run_uses_camera(),
             make_run_action=make_run_action,
@@ -221,8 +227,8 @@ class MappingWindow(QtWidgets.QWidget):
             game_table=self.games_page.table,
             file_table=self.files_page.table,
             supported_gestures=SUPPORTED_GESTURES,
-            game_engine_row=self._GAME_ENGINE_ROW,
-            no_gui_game_engine_relative_path=self._NO_GUI_GAME_ENGINE_RELATIVE_PATH,
+            # game_engine_row=self._GAME_ENGINE_ROW,
+            # no_gui_game_engine_relative_path=self._NO_GUI_GAME_ENGINE_RELATIVE_PATH,
             make_run_action=make_run_action,
         )
 
@@ -241,7 +247,7 @@ class MappingWindow(QtWidgets.QWidget):
     def save_from_table(self) -> None:
         out = self._collect_mapping_from_table()
         dynamic_apps = collect_dynamic_apps(self.apps_page.table, self.apps_page.static_rows)
-        game_run_paths = collect_game_run_paths(self.games_page.table, start_row=1)
+        game_run_paths = collect_game_run_paths(self.games_page.table, start_row=0)
         file_run_entries = collect_file_run_entries(self.files_page.table)
         save_mapping(
             out,

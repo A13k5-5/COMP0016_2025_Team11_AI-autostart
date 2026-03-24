@@ -43,6 +43,9 @@ class ReferencePage(QtWidgets.QWidget):
         person_row.addStretch()
         layout.addLayout(person_row)
 
+        self.save_display_settings_btn = QtWidgets.QPushButton("Save Display Settings")
+        layout.addWidget(self.save_display_settings_btn)
+
         section_line_1 = QtWidgets.QFrame()
         section_line_1.setFrameShape(QtWidgets.QFrame.HLine)
         section_line_1.setFrameShadow(QtWidgets.QFrame.Sunken)
