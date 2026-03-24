@@ -85,8 +85,16 @@ class GestureController:
         self.execute_action(action)
 
     def run_file_and_wait(self) -> None:
-        subprocess.run(["cmd", "/c", "start", "", "/wait", self.path_to_run])
-        self.path_to_run = None
+        if self.path_to_run is None:
+            return
+
+        try:
+            subprocess.run(
+                ["cmd", "/c", "start", "", "/wait", self.path_to_run],
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
+        finally:
+            self.path_to_run = None
 
     def execute_action(self, action: str) -> None:
         """
