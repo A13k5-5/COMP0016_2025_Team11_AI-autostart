@@ -17,20 +17,19 @@ AI-Autostart uses webcam gesture recognition to trigger actions like opening/clo
 
 - `runSystemTray.py` — starts the tray application
 - `systemTrayDesktopApp/systemTrayApp.py` — tray icon/menu logic
-- `main.py` — starts gesture recognition controller
-- `controller.py` — action orchestration and gesture handling
-- `gui/gestureMappingWindow.py` — settings UI
-- `gui/actions.py` — mapping/app-data persistence helpers
-- `myGestureRecognizer/` — MediaPipe + OpenCV recognition pipeline
-- `cameraManager.py` — camera handoff for external processes
+- `src/controller/controller.py` — action orchestration and gesture handling
+- `src/controller/powerManager.py` — power mode management
+- `src/gui/gestureMappingWindow.py` — settings UI
+- `src/gui/actions.py` — mapping/app-data persistence helpers
+- `src/video_recogniser/myGestureRecognizer/` — MediaPipe + OpenCV recognition pipeline
 
 ## Requirements
 
 - Windows
-- Python 3.10
+- Python 3.12
 - Webcam
 
-Install dependencies:
+Install dependencies in a fresh virtual environment:
 
 ```bash
 pip install -r requirements.txt
@@ -50,18 +49,6 @@ Tray menu options:
 - **Open settings**
 - **Exit**
 
-### 2) Open settings directly (optional)
-
-```bash
-python runGUI.py
-```
-
-### 3) Run recognizer directly (optional)
-
-```bash
-python main.py
-```
-
 ## Settings Workflow
 
 In the settings UI, configure mappings in pages:
@@ -75,17 +62,10 @@ Then click **Save** to persist changes.
 
 ## Data Files
 
-- `gui/gesture_mapping.json` — gesture/action config + metadata
+- `gesture_mapping.json` — gesture/action config + metadata
 - `app_data.json` — app lookup list for `AppOpener`
 
 On tray startup, AI-Autostart refreshes `app_data.json` automatically.
-
-## Notes on Run Paths
-
-`run:` actions support both absolute and relative paths.
-
-Relative paths are resolved against the project root at runtime. Missing targets are skipped gracefully with a console warning.
-
 
 ## Tech Stack
 
@@ -93,5 +73,4 @@ Relative paths are resolved against the project root at runtime. Missing targets
 - OpenCV
 - OpenVINO (person detection)
 - PySide6
-- pystray
 - AppOpener

@@ -51,34 +51,24 @@ Assert-PathExists -Path $runScript -Label "Entry script"
 Assert-PathExists -Path $requirements -Label "Requirements file"
 Assert-PathExists -Path $intelSource -Label "Intel model folder"
 
-Write-Host "[1/6] Creating clean virtual environment: $venvDir"
-if (Test-Path -LiteralPath $venvDir) {
-    Remove-Item -LiteralPath $venvDir -Recurse -Force
-}
-
-$pythonCommand = Resolve-PythonCommand
-if ($pythonCommand -eq "py") {
-    Invoke-CheckedCommand -FilePath $pythonCommand -Arguments @("-3", "-m", "venv", $venvDir)
-} else {
-    Invoke-CheckedCommand -FilePath $pythonCommand -Arguments @("-m", "venv", $venvDir)
-}
+Write-Host "[1/4] Checking virtual environment exists: $venvDir"
 Assert-PathExists -Path $venvPython -Label "Virtual environment python"
 
-Write-Host "[2/6] Installing dependencies and Nuitka 4.0.5"
-Invoke-CheckedCommand -FilePath $venvPython -Arguments @("-m", "pip", "install", "--upgrade", "pip")
-Invoke-CheckedCommand -FilePath $venvPython -Arguments @("-m", "pip", "install", "-r", $requirements)
-Invoke-CheckedCommand -FilePath $venvPython -Arguments @("-m", "pip", "install", "nuitka==4.0.5")
+#Write-Host "[2/6] Installing dependencies and Nuitka 4.0.5"
+#Invoke-CheckedCommand -FilePath $venvPython -Arguments @("-m", "pip", "install", "--upgrade", "pip")
+#Invoke-CheckedCommand -FilePath $venvPython -Arguments @("-m", "pip", "install", "-r", $requirements)
+#Invoke-CheckedCommand -FilePath $venvPython -Arguments @("-m", "pip", "install", "nuitka==4.0.5")
 
-Write-Host "[3/6] Compiling with Nuitka"
-Push-Location $ProjectRoot
-try {
-    Invoke-CheckedCommand -FilePath $venvPython -Arguments @("-m", "nuitka", "run_system_tray.py")
-} finally {
-    Pop-Location
-}
-Assert-PathExists -Path $distDir -Label "Nuitka dist output"
+#Write-Host "[2/5] Compiling with Nuitka"
+#Push-Location $ProjectRoot
+#try {
+#    Invoke-CheckedCommand -FilePath $venvPython -Arguments @("-m", "nuitka", "run_system_tray.py")
+#} finally {
+#    Pop-Location
+#}
+#Assert-PathExists -Path $distDir -Label "Nuitka dist output"
 
-Write-Host "[4/6] Copying person detector intel folder"
+Write-Host "[2/4] Copying person detector intel folder"
 $intelDest = Join-Path $distDir "src\video_recogniser\person_recogniser\intel"
 if (Test-Path -LiteralPath $intelDest) {
     Remove-Item -LiteralPath $intelDest -Recurse -Force
@@ -86,14 +76,14 @@ if (Test-Path -LiteralPath $intelDest) {
 New-Item -ItemType Directory -Path (Split-Path -Path $intelDest -Parent) -Force | Out-Null
 Copy-Item -LiteralPath $intelSource -Destination $intelDest -Recurse -Force
 
-Write-Host "[5/6] Copying OpenVINO libs into dist/openvino/libs"
+Write-Host "[3/4] Copying OpenVINO libs into dist/openvino/libs"
 $openvinoLibsSource = Join-Path $venvDir "Lib\site-packages\openvino\libs"
 Assert-PathExists -Path $openvinoLibsSource -Label "OpenVINO libs in venv"
 $openvinoLibsDest = Join-Path $distDir "openvino\libs"
 New-Item -ItemType Directory -Path $openvinoLibsDest -Force | Out-Null
 Copy-Item -Path (Join-Path $openvinoLibsSource "*") -Destination $openvinoLibsDest -Recurse -Force
 
-Write-Host "[6/6] Copying OpenVINO DLLs into dist root"
+Write-Host "[4/4] Copying OpenVINO DLLs into dist root"
 $dllNames = @("openvino_intel_cpu_plugin.dll", "openvino_ir_frontend.dll")
 foreach ($dllName in $dllNames) {
     $dllSource = Join-Path $openvinoLibsSource $dllName
