@@ -34,8 +34,8 @@ from src.gui.tableUtils import (
 class MappingWindow(QtWidgets.QWidget):
     """Window for configuring gesture-to-action mappings."""
 
-    _GAME_ENGINE_ROW: int = 0
-    _NO_GUI_GAME_ENGINE_RELATIVE_PATH = "gameEngine/main.dist/main.exe"
+    # _GAME_ENGINE_ROW: int = 0
+    # _NO_GUI_GAME_ENGINE_RELATIVE_PATH = "gameEngine/main.dist/main.exe"
     _ACTION_DISPLAY_NAMES = {
         "stop": "Stop Gesture Recognizer",
     }
@@ -165,8 +165,8 @@ class MappingWindow(QtWidgets.QWidget):
                 refresh_options=False,
             )
 
-        no_gui_action = make_run_action(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
-        self.games_page.set_no_gui_game_engine_row(action_to_gesture.get(no_gui_action, ""))
+        # no_gui_action = make_run_action(self._NO_GUI_GAME_ENGINE_RELATIVE_PATH)
+        # self.games_page.set_no_gui_game_engine_row(action_to_gesture.get(no_gui_action, ""))
 
         game_run_paths_list = load_game_run_paths()
         self.games_page.clear_dynamic_rows()
@@ -181,7 +181,8 @@ class MappingWindow(QtWidgets.QWidget):
         file_entries = ensure_file_entries(
             file_entries=load_file_run_entries(),
             action_to_gesture=action_to_gesture,
-            no_gui_action=no_gui_action,
+            # no_gui_action=no_gui_action,
+            # no_gui_action="none",
             game_run_paths=game_run_paths_list,
             fallback_run_uses_camera=load_run_uses_camera(),
             make_run_action=make_run_action,
@@ -221,8 +222,8 @@ class MappingWindow(QtWidgets.QWidget):
             game_table=self.games_page.table,
             file_table=self.files_page.table,
             supported_gestures=SUPPORTED_GESTURES,
-            game_engine_row=self._GAME_ENGINE_ROW,
-            no_gui_game_engine_relative_path=self._NO_GUI_GAME_ENGINE_RELATIVE_PATH,
+            # game_engine_row=self._GAME_ENGINE_ROW,
+            # no_gui_game_engine_relative_path=self._NO_GUI_GAME_ENGINE_RELATIVE_PATH,
             make_run_action=make_run_action,
         )
 
@@ -241,7 +242,7 @@ class MappingWindow(QtWidgets.QWidget):
     def save_from_table(self) -> None:
         out = self._collect_mapping_from_table()
         dynamic_apps = collect_dynamic_apps(self.apps_page.table, self.apps_page.static_rows)
-        game_run_paths = collect_game_run_paths(self.games_page.table, start_row=1)
+        game_run_paths = collect_game_run_paths(self.games_page.table, start_row=0)
         file_run_entries = collect_file_run_entries(self.files_page.table)
         save_mapping(
             out,
