@@ -115,9 +115,7 @@ class MappingWindow(QtWidgets.QWidget):
         self.reload_btn.clicked.connect(self.load_into_table)
         self.clear_btn.clicked.connect(self.clear_selections)
         self.save_btn.clicked.connect(self.save_from_table)
-
-        self.reference_page.camera_view_toggle.toggled.connect(self._save_camera_view_setting)
-        self.reference_page.person_recognition_toggle.toggled.connect(self._save_person_recognition_setting)
+        self.reference_page.save_display_settings_btn.clicked.connect(self._save_reference_settings)
 
         self.apps_page.status_message.connect(self.status.setText)
         self.games_page.status_message.connect(self.status.setText)
@@ -138,6 +136,13 @@ class MappingWindow(QtWidgets.QWidget):
             save_person_recognition_enabled(enabled)
         except Exception as exc:
             self.status.setText(f"Failed to save person recognition setting: {exc}")
+
+    def _save_reference_settings(self) -> None:
+        self._save_camera_view_setting(self.reference_page.camera_view_toggle.isChecked())
+        self._save_person_recognition_setting(self.reference_page.person_recognition_toggle.isChecked())
+        if self._controller is not None:
+            self._controller.reload_runtime_settings_if_needed()
+        self.status.setText("Display settings saved.")
 
     def _navigate(self, index: int) -> None:
         self._stack.setCurrentIndex(index)
