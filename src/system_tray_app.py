@@ -34,6 +34,7 @@ class SystemTrayApp:
         # Create the tray
         tray = QSystemTrayIcon()
         tray.setIcon(icon)
+        tray.setToolTip("AI Autostart")
         tray.setVisible(True)
 
         # Create the menu
