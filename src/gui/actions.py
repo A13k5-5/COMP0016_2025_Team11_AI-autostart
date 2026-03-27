@@ -22,12 +22,33 @@ RESERVED_GESTURES = {EnumGesture.OPEN_PALM.value}
 # Prefix used for user-defined executable actions stored in the mapping file.
 RUN_PREFIX = "run:"
 RUN_USES_CAMERA_KEY = "run_uses_camera"  # kept for backward-compat loading
-GAME_RUN_PATH_KEY = "game_run_path"       # kept for backward-compat loading
 GAME_RUN_PATHS_KEY = "game_run_paths"
 FILE_RUN_ENTRIES_KEY = "file_run_entries"
 DYNAMIC_APPS_KEY = "dynamic_apps"
 CAMERA_VIEW_ENABLED_KEY = "camera_view_enabled"
 PERSON_RECOGNITION_ENABLED_KEY = "person_recognition_enabled"
+
+def _load_data():
+    with open(MAPPING_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def path_uses_camera(path: str) -> bool:
+    data = _load_data()
+    file_entries = data.get(FILE_RUN_ENTRIES_KEY, [])
+
+    # could be a game run path
+    game_run_paths = data.get(GAME_RUN_PATHS_KEY, [])
+    for game_path in game_run_paths:
+        if game_path.strip() == path.strip():
+            # should be a True, but read from the data
+            return data.get(RUN_USES_CAMERA_KEY, True)
+
+    # could be in file run entries
+    for entry in file_entries:
+        if entry.get("path").strip() == path.strip():
+            return entry.get("uses_camera", False)
+
+    return False
 
 def is_run_action(action: str) -> bool:
     """Return True if *action* represents a user-chosen file to open."""
@@ -48,8 +69,7 @@ def load_mapping(path: str = MAPPING_PATH) -> dict:
     """
     Load and return the persisted gesture-to-action mapping from JSON.
     """
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    data = _load_data()
     return {g: str(data.get(g, "")).strip() for g in SUPPORTED_GESTURES}
 
 def load_app_data(path: str = APP_DATA_PATH) -> dict:
@@ -74,8 +94,7 @@ def load_camera_view_enabled(path: str = MAPPING_PATH) -> bool:
     Load whether the live camera preview window should be shown.
     Defaults to False when key is missing.
     """
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    data = _load_data()
     return bool(data.get(CAMERA_VIEW_ENABLED_KEY, False))
 
 
@@ -83,8 +102,7 @@ def save_camera_view_enabled(enabled: bool, path: str = MAPPING_PATH) -> None:
     """
     Persist the camera preview visibility toggle.
     """
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    data = _load_data()
     data[CAMERA_VIEW_ENABLED_KEY] = bool(enabled)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
@@ -95,8 +113,7 @@ def load_person_recognition_enabled(path: str = MAPPING_PATH) -> bool:
     Load whether person recognition is enabled.
     Defaults to True when key is missing to preserve existing behavior.
     """
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    data = _load_data()
     return bool(data.get(PERSON_RECOGNITION_ENABLED_KEY, True))
 
 
@@ -104,8 +121,7 @@ def save_person_recognition_enabled(enabled: bool, path: str = MAPPING_PATH) -> 
     """
     Persist the person-recognition toggle.
     """
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    data = _load_data()
     data[PERSON_RECOGNITION_ENABLED_KEY] = bool(enabled)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
@@ -114,38 +130,23 @@ def load_dynamic_apps(path: str = MAPPING_PATH) -> list:
     """
     Load the ordered list of dynamically added app names from the mapping file.
     """
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    data = _load_data()
     return list(data.get(DYNAMIC_APPS_KEY, []))
 
 def load_run_uses_camera(path: str = MAPPING_PATH) -> bool:
     """
     Load the persisted camera-use flag for the run action row.
     """
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    data = _load_data()
     return bool(data.get(RUN_USES_CAMERA_KEY, False))
-
-def load_game_run_path(path: str = MAPPING_PATH) -> str:
-    """
-    Load the persisted file path for a single run-game row (backward compat).
-    """
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return str(data.get(GAME_RUN_PATH_KEY, "")).strip()
-
 
 def load_game_run_paths(path: str = MAPPING_PATH) -> list:
     """
     Load the list of persisted game file paths.
     Falls back to wrapping the old single-path key for backward compatibility.
     """
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    if GAME_RUN_PATHS_KEY in data:
-        return [str(p).strip() for p in data[GAME_RUN_PATHS_KEY] if str(p).strip()]
-    old = str(data.get(GAME_RUN_PATH_KEY, "")).strip()
-    return [old] if old else []
+    data = _load_data()
+    return [str(p).strip() for p in data[GAME_RUN_PATHS_KEY] if str(p).strip()]
 
 
 def load_file_run_entries(path: str = MAPPING_PATH) -> list:
@@ -153,8 +154,7 @@ def load_file_run_entries(path: str = MAPPING_PATH) -> list:
     Load the list of persisted file-run entries, each a dict with 'path' and 'uses_camera'.
     Returns an empty list when the key is absent (caller handles backward compat).
     """
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    data = _load_data()
     return [
         {"path": str(e.get("path", "")).strip(), "uses_camera": bool(e.get("uses_camera", False))}
         for e in data.get(FILE_RUN_ENTRIES_KEY, [])
@@ -186,3 +186,6 @@ def save_mapping(
 
     with open(path, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2)
+
+if __name__ == "__main__":
+    path_uses_camera("C:/Users/pison/Downloads/Hobbit from compiled engine.noui")
