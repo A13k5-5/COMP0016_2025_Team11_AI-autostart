@@ -29,6 +29,7 @@
 
 # nuitka-project: --product-name=AI-Autostart
 # nuitka-project: --product-version=1.0.0
+# nuitka-project: --output-filename=AI-Autostart.exe
 
 from src.system_tray_app import SystemTrayApp
 

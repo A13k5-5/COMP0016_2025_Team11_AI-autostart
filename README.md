@@ -15,8 +15,8 @@ AI-Autostart uses webcam gesture recognition to trigger actions like opening/clo
 
 ## Project Structure
 
-- `runSystemTray.py` — starts the tray application
-- `systemTrayDesktopApp/systemTrayApp.py` — tray icon/menu logic
+- `run_systen_tray.py` — starts the tray application
+- `system_tray_app.py` — tray icon/menu logic
 - `src/controller/controller.py` — action orchestration and gesture handling
 - `src/controller/powerManager.py` — power mode management
 - `src/gui/gestureMappingWindow.py` — settings UI
@@ -40,7 +40,7 @@ pip install -r requirements.txt
 ### 1) Start system tray app
 
 ```bash
-python runSystemTray.py
+python run_system_tray.py
 ```
 
 Tray menu options:
