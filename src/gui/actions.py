@@ -32,6 +32,24 @@ def _load_data():
     with open(MAPPING_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
+def path_uses_camera(path: str) -> bool:
+    data = _load_data()
+    file_entries = data.get(FILE_RUN_ENTRIES_KEY, [])
+
+    # could be a game run path
+    game_run_paths = data.get(GAME_RUN_PATHS_KEY, [])
+    for game_path in game_run_paths:
+        if game_path.strip() == path.strip():
+            # should be a True, but read from the data
+            return data.get(RUN_USES_CAMERA_KEY, True)
+
+    # could be in file run entries
+    for entry in file_entries:
+        if entry.get("path").strip() == path.strip():
+            return entry.get("uses_camera", False)
+
+    return False
+
 def is_run_action(action: str) -> bool:
     """Return True if *action* represents a user-chosen file to open."""
     return action.startswith(RUN_PREFIX)
@@ -168,3 +186,6 @@ def save_mapping(
 
     with open(path, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2)
+
+if __name__ == "__main__":
+    path_uses_camera("C:/Users/pison/Downloads/Hobbit from compiled engine.noui")

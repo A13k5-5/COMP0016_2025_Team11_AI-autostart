@@ -1,3 +1,4 @@
+import os
 import subprocess
 from time import time
 import AppOpener
@@ -11,6 +12,7 @@ from src.gui.actions import (
     load_person_recognition_enabled,
     is_run_action,
     get_run_path,
+    path_uses_camera
 )
 from src.controller.powerManager import PowerManager
 
@@ -134,10 +136,10 @@ class GestureController:
             path = get_run_path(action)
             if path:
                 self.path_to_run = path
-                if self.run_uses_camera:
+                if path_uses_camera(path):
                     self.videoGestureRecogniser.stop()
                 else:
-                    self.run_file_and_wait()
+                    os.startfile(path)
             return
 
     def stop(self):
