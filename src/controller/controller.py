@@ -135,8 +135,9 @@ class GestureController:
         if is_run_action(action):
             path = get_run_path(action)
             if path:
-                self.path_to_run = path
                 if path_uses_camera(path):
+                    # path to run set for the main loop to run after video recognition stopped
+                    self.path_to_run = path
                     self.videoGestureRecogniser.stop()
                 else:
                     os.startfile(path)
@@ -145,7 +146,6 @@ class GestureController:
     def stop(self):
         """Stop the recognizer loop."""
         self.videoGestureRecogniser.stop()
-        self.path_to_run = None
 
     def run(self):
         """
