@@ -25,7 +25,7 @@
     },
     {
       "path": "C:/Users/pison/Downloads/AI-autostart/requirements.txt",
-      "uses_camera": true
+      "uses_camera": false
     }
   ],
   "camera_view_enabled": true,

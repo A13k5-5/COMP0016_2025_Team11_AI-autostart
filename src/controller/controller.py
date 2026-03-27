@@ -117,7 +117,7 @@ class GestureController:
 
         action = action.strip()
         if action == "stop":
-            self.videoGestureRecogniser.stop()
+            self.stop()
             return
 
         if action.startswith("open:"):
@@ -145,6 +145,7 @@ class GestureController:
     def stop(self):
         """Stop the recognizer loop."""
         self.videoGestureRecogniser.stop()
+        self.path_to_run = None
 
     def run(self):
         """
